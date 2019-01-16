@@ -1,6 +1,6 @@
 const cmd = require('commander');
 const PowChain = require('./pow-chain');
-const ValidatorRegistry = require('./validator-registry');
+const BeaconChain = require('./beacon-chain');
 
 // Default PoW web3 host
 const defaultWeb3PowHost = 'ws://127.0.0.1:8545';
@@ -22,11 +22,11 @@ function start() {
 
         // Create services
         powChain = new PowChain();
-        validatorRegistry = new ValidatorRegistry();
+        beaconChain = new BeaconChain();
 
         // Initialise services
         powChain.init(cmd);
-        validatorRegistry.init(cmd, powChain);
+        beaconChain.init(cmd, powChain);
 
     }
     catch (e) {
