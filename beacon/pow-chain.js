@@ -1,3 +1,4 @@
+const EventEmitter = require('events');
 const fs = require('fs');
 const ssz = require('ssz');
 const Web3 = require('web3');
@@ -9,7 +10,7 @@ const depositContractABI = JSON.parse(fs.readFileSync(__dirname + '/../contracts
 /**
  * PoW chain service
  */
-class PowChain {
+class PowChain extends EventEmitter {
 
 
     /**
@@ -43,7 +44,7 @@ class PowChain {
      */
     processDepositEvent(event) {
 
-        // Get deposit input
+        // Get deposit data
         let depositData = Buffer.from(event.returnValues.data.substr(2), 'hex');
         let depositAmountGweiEncoded = depositData.slice(0, 8);
         let depositTimestampEncoded = depositData.slice(8, 16);
@@ -67,6 +68,9 @@ class PowChain {
 
         // Decode deposit amount
         let depositAmountGwei = parseInt(depositAmountGweiEncoded.toString('hex'), 16);
+
+        // Emit deposit event
+        this.emit('deposit', depositInput, depositAmountGwei);
 
     }
 

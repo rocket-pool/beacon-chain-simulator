@@ -1,5 +1,6 @@
 const cmd = require('commander');
-const PowChain = require('./powchain');
+const PowChain = require('./pow-chain');
+const ValidatorRegistry = require('./validator-registry');
 
 // Default PoW web3 host
 const defaultWeb3PowHost = 'ws://127.0.0.1:8545';
@@ -19,9 +20,13 @@ function start() {
         if (!cmd.depositContract) { throw new Error('Deposit contract address required (-d, --depositContract <address>).'); }
         if (!cmd.depositContract.match(/^(0x)?[0-9a-f]{40}$/i)) { throw new Error('Invalid deposit contract address.'); }
 
-        // Start PoW chain service
+        // Create services
         powChain = new PowChain();
+        validatorRegistry = new ValidatorRegistry();
+
+        // Initialise services
         powChain.init(cmd);
+        validatorRegistry.init(cmd, powChain);
 
     }
     catch (e) {
