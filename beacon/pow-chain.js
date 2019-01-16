@@ -70,7 +70,14 @@ class PowChain extends EventEmitter {
         let depositAmountGwei = parseInt(depositAmountGweiEncoded.toString('hex'), 16);
 
         // Emit deposit event
-        this.emit('deposit', depositInput, depositAmountGwei);
+        this.emit('deposit',
+            depositInput.pubkey,
+            depositAmountGwei,
+            null,
+            depositInput.withdrawal_credentials,
+            depositInput.randao_commitment,
+            depositInput.custody_commitment
+        );
 
     }
 
