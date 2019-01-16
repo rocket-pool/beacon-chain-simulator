@@ -1,0 +1,25 @@
+{
+  "name": "beacon-chain-simulator",
+  "version": "1.0.0",
+  "description": "An ethereum 2.0 beacon chain simulator",
+  "main": "",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rocket-pool/beacon-chain-simulator.git"
+  },
+  "author": "jake@rocketpool.net",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rocket-pool/beacon-chain-simulator/issues"
+  },
+  "homepage": "https://github.com/rocket-pool/beacon-chain-simulator#readme",
+  "dependencies": {
+    "web3": "^1.0.0-beta.37"
+  }
+}
