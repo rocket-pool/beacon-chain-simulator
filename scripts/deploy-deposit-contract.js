@@ -21,7 +21,7 @@ async function deployDepositContract() {
 
         // Process CLI arguments
         if (!cmd.host) { cmd.host = defaultWeb3Host; }
-        if (!cmd.from) { throw new Error('From address required (-f, --from).'); }
+        if (!cmd.from) { throw new Error('From address required (-f, --from <address>).'); }
         if (!cmd.from.match(/^(0x)?[0-9a-f]{40}$/i)) { throw new Error('Invalid from address.'); }
 
         // Initialise web3
