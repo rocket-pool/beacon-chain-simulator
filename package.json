@@ -2,7 +2,7 @@
   "name": "beacon-chain-simulator",
   "version": "1.0.0",
   "description": "An ethereum 2.0 beacon chain simulator",
-  "main": "",
+  "main": "beacon/index.js",
   "directories": {
     "test": "test"
   },
