@@ -25,7 +25,7 @@ class ValidatorRegistry {
 
         // Process PoW chain deposits
         powChain.on('deposit', (...args) => {
-            this.processDeposit.apply(this, args);
+            this.processDeposit(...args);
         });
 
     }
