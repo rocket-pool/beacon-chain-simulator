@@ -256,6 +256,7 @@ class BeaconChain {
         // Check validator state
         let validator = this.validatorRegistry[index];
         if (validator.exitSlot <= this.slot + ENTRY_EXIT_DELAY) return false;
+        if (validator.statusFlags & INITIATED_EXIT) return false;
 
         // TODO: verify BLS signature when implemented
 
