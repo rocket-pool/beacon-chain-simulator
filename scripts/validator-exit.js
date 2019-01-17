@@ -39,7 +39,7 @@ async function validatorExit() {
 
                     // Success
                     case 'success':
-                        console.log('Validator exited successfully');
+                        console.log('Validator initiated exit successfully');
                     break;
 
                     // Error
