@@ -1,5 +1,6 @@
 // Deposits
 const MAX_DEPOSIT = 32000000000; // gwei
+const EJECTION_BALANCE = 16000000000; // gwei
 
 // Initial values
 const GENESIS_SLOT = 0;
@@ -140,8 +141,22 @@ class BeaconChain {
 
         });
 
+        // Eject penalised validators
+        this.validatorRegistry.filter((v, vi) => (
+            v.activationSlot <= this.slot && v.exitSlot > this.slot + ENTRY_EXIT_DELAY && // Active & not exited
+            this.validatorBalances[vi] < EJECTION_BALANCE // Balance below threshold
+        )).forEach(v => {
+
+            // Set validator exit slot
+            v.exitSlot = this.slot + ENTRY_EXIT_DELAY;
+
+            // Log
+            console.log('Ejecting validator %s at slot %d', v.pubkey, v.exitSlot);
+
+        });
+
         // Logging
-        console.log('');
+        console.log('Processing epoch complete.');
 
     }
 
@@ -189,7 +204,6 @@ class BeaconChain {
 
         // Log
         console.log('Adding validator %s with balance %d at index %d', pubkey, amount, this.validatorRegistry.length);
-        console.log('');
 
         // Add validator
         this.validatorRegistry.push({
