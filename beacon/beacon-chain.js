@@ -152,12 +152,21 @@ class BeaconChain {
                 console.log('  '+'Activating validator %s with balance %d at slot %d', v.pubkey, this.validatorBalances[vi], v.activationSlot);
             }
 
+            // Exit pending validators
+            if (
+                v.exitSlot > this.slot + ENTRY_EXIT_DELAY && // Not exited
+                v.statusFlags & INITIATED_EXIT // Initiated exit
+            ) {
+                this.exitValidator(vi);
+                console.log('  '+'Exiting validator %s with balance %d at slot %d', v.pubkey, this.validatorBalances[vi], v.exitSlot);
+            }
+
             // Eject validators with insufficient balances
             if (
                 v.activationSlot <= this.slot && v.exitSlot > this.slot + ENTRY_EXIT_DELAY && // Active & not exited
                 this.validatorBalances[vi] < EJECTION_BALANCE // Insufficient balance
             ) {
-                this.ejectValidator(vi);
+                this.exitValidator(vi);
                 console.log('  '+'Ejecting validator %s with balance %d at slot %d', v.pubkey, this.validatorBalances[vi], v.exitSlot);
             }
 
@@ -267,10 +276,10 @@ class BeaconChain {
 
 
     /**
-     * Eject a validator
-     * @param index The index of the validator to eject
+     * Exit a validator
+     * @param index The index of the validator to exit
      */
-    ejectValidator(index) {
+    exitValidator(index) {
         this.validatorRegistry[index].exitSlot = this.slot + ENTRY_EXIT_DELAY;
     }
 
