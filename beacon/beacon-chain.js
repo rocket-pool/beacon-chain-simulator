@@ -12,6 +12,10 @@ const EPOCH_LENGTH = 5; // Slots
 const ENTRY_EXIT_DELAY = 10; // Slots
 const MIN_VALIDATOR_WITHDRAWAL_TIME = 10; // Slots
 
+// Status flags
+const INITIATED_EXIT = 1;
+const WITHDRAWABLE = 2;
+
 
 /**
  * Beacon chain service

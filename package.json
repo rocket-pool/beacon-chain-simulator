@@ -22,6 +22,7 @@
   "dependencies": {
     "commander": "^2.19.0",
     "ssz": "^1.5.3",
-    "web3": "^1.0.0-beta.37"
+    "web3": "^1.0.0-beta.37",
+    "ws": "^6.1.2"
   }
 }
