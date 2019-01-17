@@ -73,11 +73,13 @@ class BeaconChain {
         // Add validator if it doesn't exist
         if (index == -1) {
             this.addValidator(pubkey, amount, withdrawalCredentials, randaoCommitment, custodyCommitment);
+            console.log('Added validator %s with balance %d at index %d', pubkey, amount, this.validatorRegistry.length);
         }
 
         // Increase balance if validator exists
         else {
-            this.validatorBalances[index] += amount;
+            this.increaseValidatorBalance(index, amount);
+            console.log('Increased balance of validator %s by %d to %d', pubkey, amount, this.validatorBalances[index]);
         }
 
     }
@@ -127,31 +129,26 @@ class BeaconChain {
         console.log('Processing epoch...');
         console.log('  '+'Current slot: %d', this.slot);
 
-        // Activate pending validators
-        this.validatorRegistry.filter((v, vi) => (
-            v.activationSlot > this.slot + ENTRY_EXIT_DELAY && // Pending activation
-            this.validatorBalances[vi] >= MAX_DEPOSIT // Sufficient balance
-        )).forEach(v => {
+        // Process validators
+        this.validatorRegistry.forEach((v, vi) => {
 
-            // Set validator activation slot
-            v.activationSlot = this.slot + ENTRY_EXIT_DELAY;
+            // Activate pending validators
+            if (
+                v.activationSlot > this.slot + ENTRY_EXIT_DELAY && // Pending activation
+                this.validatorBalances[vi] >= MAX_DEPOSIT // Sufficient balance
+            ) {
+                this.activateValidator(vi);
+                console.log('  '+'Activating validator %s with balance %d at slot %d', v.pubkey, this.validatorBalances[vi], v.activationSlot);
+            }
 
-            // Log
-            console.log('  '+'Activating validator %s at slot %d', v.pubkey, v.activationSlot);
-
-        });
-
-        // Eject penalised validators
-        this.validatorRegistry.filter((v, vi) => (
-            v.activationSlot <= this.slot && v.exitSlot > this.slot + ENTRY_EXIT_DELAY && // Active & not exited
-            this.validatorBalances[vi] < EJECTION_BALANCE // Balance below threshold
-        )).forEach(v => {
-
-            // Set validator exit slot
-            v.exitSlot = this.slot + ENTRY_EXIT_DELAY;
-
-            // Log
-            console.log('  '+'Ejecting validator %s at slot %d', v.pubkey, v.exitSlot);
+            // Eject validators with insufficient balances
+            if (
+                v.activationSlot <= this.slot && v.exitSlot > this.slot + ENTRY_EXIT_DELAY && // Active & not exited
+                this.validatorBalances[vi] < EJECTION_BALANCE // Insufficient balance
+            ) {
+                this.ejectValidator(vi);
+                console.log('  '+'Ejecting validator %s with balance %d at slot %d', v.pubkey, this.validatorBalances[vi], v.exitSlot);
+            }
 
         });
 
@@ -201,11 +198,6 @@ class BeaconChain {
      * @return The index of the new validator
      */
     addValidator(pubkey, amount, withdrawalCredentials, randaoCommitment, custodyCommitment) {
-
-        // Log
-        console.log('Adding validator %s with balance %d at index %d', pubkey, amount, this.validatorRegistry.length);
-
-        // Add validator
         this.validatorRegistry.push({
             pubkey,
             withdrawalCredentials,
@@ -214,10 +206,37 @@ class BeaconChain {
             activationSlot: FAR_FUTURE_SLOT,
             exitSlot: FAR_FUTURE_SLOT,
             withdrawalSlot: FAR_FUTURE_SLOT,
-            penalizedSlot: FAR_FUTURE_SLOT,
+            statusFlags: 0,
         });
         return this.validatorBalances.push(amount) - 1;
+    }
 
+
+    /**
+     * Increase a validator's balance
+     * @param index The index of the validator to update
+     * @param amount The amount to increase the balance by
+     */
+    increaseValidatorBalance(index, amount) {
+        this.validatorBalances[index] += amount;
+    }
+
+
+    /**
+     * Activate a validator
+     * @param index The index of the validator to activate
+     */
+    activateValidator(index) {
+        this.validatorRegistry[index].activationSlot = this.slot + ENTRY_EXIT_DELAY;
+    }
+
+
+    /**
+     * Eject a validator
+     * @param index The index of the validator to eject
+     */
+    ejectValidator(index) {
+        this.validatorRegistry[index].exitSlot = this.slot + ENTRY_EXIT_DELAY;
     }
 
 
