@@ -125,7 +125,7 @@ class BeaconChain {
 
         // Logging
         console.log('Processing epoch...');
-        console.log('Current slot: %d', this.slot);
+        console.log('  '+'Current slot: %d', this.slot);
 
         // Activate pending validators
         this.validatorRegistry.filter((v, vi) => (
@@ -137,7 +137,7 @@ class BeaconChain {
             v.activationSlot = this.slot + ENTRY_EXIT_DELAY;
 
             // Log
-            console.log('Activating validator %s at slot %d', v.pubkey, v.activationSlot);
+            console.log('  '+'Activating validator %s at slot %d', v.pubkey, v.activationSlot);
 
         });
 
@@ -151,12 +151,12 @@ class BeaconChain {
             v.exitSlot = this.slot + ENTRY_EXIT_DELAY;
 
             // Log
-            console.log('Ejecting validator %s at slot %d', v.pubkey, v.exitSlot);
+            console.log('  '+'Ejecting validator %s at slot %d', v.pubkey, v.exitSlot);
 
         });
 
         // Logging
-        console.log('Processing epoch complete.');
+        console.log('Processing complete.');
 
     }
 
