@@ -58,6 +58,13 @@ class BeaconChain {
 
 
     /**
+     * =================
+     * External handlers
+     * =================
+     */
+
+
+    /**
      * Process a PoW chain deposit
      * @param pubkey The validator's public key
      * @param amount The validator's deposit amount in gwei
@@ -223,6 +230,30 @@ class BeaconChain {
      */
     increaseValidatorBalance(index, amount) {
         this.validatorBalances[index] += amount;
+    }
+
+
+    /**
+     * Initiate validator exit
+     * @param pubkey The public key of the validator to exit
+     * @return true on success or false on failure
+     */
+    initiateValidatorExit(pubkey) {
+
+        // Get validator index
+        let index = this.getValidatorIndex(pubkey);
+        if (index == -1) return false;
+
+        // Check validator state
+        let validator = this.validatorRegistry[index];
+        if (validator.exitSlot <= this.slot + ENTRY_EXIT_DELAY) return false;
+
+        // TODO: verify BLS signature when implemented
+
+        // Set validator status
+        validator.statusFlags |= INITIATED_EXIT;
+        return true;
+
     }
 
 

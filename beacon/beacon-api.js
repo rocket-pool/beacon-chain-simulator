@@ -10,8 +10,12 @@ class BeaconAPI {
     /**
      * Initialise
      * @param cmd Application commands
+     * @param beaconChain Beacon chain service
      */
-    init(cmd) {
+    init(cmd, beaconChain) {
+
+        // Initialise params
+        this.beaconChain = beaconChain;
 
         // Initialise websocket server
         this.wss = new WebSocket.Server({
@@ -50,6 +54,10 @@ class BeaconAPI {
 
                 // Exit
                 case 'exit':
+
+                    // Attempt validator exit
+                    let exited = this.beaconChain.initiateValidatorExit(data.pubkey);
+                    if (!exited) throw new Error('Unable to initiate validator exit');
 
                     // Send response
                     ws.send(JSON.stringify({

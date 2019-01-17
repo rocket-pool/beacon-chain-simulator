@@ -35,7 +35,7 @@ function start() {
         // Initialise services
         beaconChain.init(cmd, powChain);
         powChain.init(cmd);
-        beaconAPI.init(cmd);
+        beaconAPI.init(cmd, beaconChain);
 
     }
     catch (e) {
