@@ -4,7 +4,7 @@ const ssz = require('ssz');
 const Web3 = require('web3');
 
 // Default web3 host
-const defaultWeb3Host = 'http://127.0.0.1:8545';
+const DEFAULT_WEB3_HOST = 'http://127.0.0.1:8545';
 
 // Get contract data
 const depositContractABI = JSON.parse(fs.readFileSync(__dirname + '/../contracts/casper/Deposit.abi'));
@@ -26,21 +26,21 @@ async function validatorDeposit() {
     try {
 
         // Process CLI arguments
-        if (!cmd.host) { cmd.host = defaultWeb3Host; }
-        if (!cmd.depositContract) { throw new Error('Deposit contract address required (-d, --depositContract <address>).'); }
-        if (!cmd.depositContract.match(/^(0x)?[0-9a-f]{40}$/i)) { throw new Error('Invalid deposit contract address.'); }
-        if (!cmd.from) { throw new Error('From address required (-f, --from <address>).'); }
-        if (!cmd.from.match(/^(0x)?[0-9a-f]{40}$/i)) { throw new Error('Invalid from address.'); }
-        if (!cmd.amount) { throw new Error('Deposit amount required (-a, --amount <number>).'); }
-        if (isNaN(parseFloat(cmd.amount)) || parseFloat(cmd.amount) <= 0) { throw new Error('Invalid deposit amount.'); }
-        if (!cmd.pubkey) { throw new Error('Validator BLS pubkey required (-p, --pubkey <key>).'); }
-        if (!cmd.pubkey.match(/^[0-9a-f]{96}$/i)) { throw new Error('Invalid validator BLS pubkey.'); }
-        if (!cmd.withdrawalPubkey) { throw new Error('Withdrawal BLS pubkey required (-w, --withdrawalPubkey <key>).'); }
-        if (!cmd.withdrawalPubkey.match(/^[0-9a-f]{96}$/i)) { throw new Error('Invalid withdrawal BLS pubkey.'); }
-        if (!cmd.randaoCommitment) { throw new Error('Randao commitment required (-r, --randaoCommitment <hash32>).'); }
-        if (!cmd.randaoCommitment.match(/^[0-9a-f]{64}$/i)) { throw new Error('Invalid randao commitment.'); }
-        if (!cmd.custodyCommitment) { throw new Error('Custody commitment required (-c, --custodyCommitment <hash32>).'); }
-        if (!cmd.custodyCommitment.match(/^[0-9a-f]{64}$/i)) { throw new Error('Invalid custody commitment.'); }
+        if (!cmd.host) cmd.host = DEFAULT_WEB3_HOST;
+        if (!cmd.depositContract) throw new Error('Deposit contract address required (-d, --depositContract <address>).');
+        if (!cmd.depositContract.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid deposit contract address.');
+        if (!cmd.from) throw new Error('From address required (-f, --from <address>).');
+        if (!cmd.from.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid from address.');
+        if (!cmd.amount) throw new Error('Deposit amount required (-a, --amount <number>).');
+        if (isNaN(parseFloat(cmd.amount)) || parseFloat(cmd.amount) <= 0) throw new Error('Invalid deposit amount.');
+        if (!cmd.pubkey) throw new Error('Validator BLS pubkey required (-p, --pubkey <key>).');
+        if (!cmd.pubkey.match(/^[0-9a-f]{96}$/i)) throw new Error('Invalid validator BLS pubkey.');
+        if (!cmd.withdrawalPubkey) throw new Error('Withdrawal BLS pubkey required (-w, --withdrawalPubkey <key>).');
+        if (!cmd.withdrawalPubkey.match(/^[0-9a-f]{96}$/i)) throw new Error('Invalid withdrawal BLS pubkey.');
+        if (!cmd.randaoCommitment) throw new Error('Randao commitment required (-r, --randaoCommitment <hash32>).');
+        if (!cmd.randaoCommitment.match(/^[0-9a-f]{64}$/i)) throw new Error('Invalid randao commitment.');
+        if (!cmd.custodyCommitment) throw new Error('Custody commitment required (-c, --custodyCommitment <hash32>).');
+        if (!cmd.custodyCommitment.match(/^[0-9a-f]{64}$/i)) throw new Error('Invalid custody commitment.');
 
         // Initialise web3
         let web3 = new Web3(cmd.host);

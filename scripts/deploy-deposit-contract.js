@@ -3,7 +3,7 @@ const cmd = require('commander');
 const Web3 = require('web3');
 
 // Default web3 host
-const defaultWeb3Host = 'http://127.0.0.1:8545';
+const DEFAULT_WEB3_HOST = 'http://127.0.0.1:8545';
 
 // Get contract data
 const depositContractABI = JSON.parse(fs.readFileSync(__dirname + '/../contracts/casper/Deposit.abi'));
@@ -20,9 +20,9 @@ async function deployDepositContract() {
     try {
 
         // Process CLI arguments
-        if (!cmd.host) { cmd.host = defaultWeb3Host; }
-        if (!cmd.from) { throw new Error('From address required (-f, --from <address>).'); }
-        if (!cmd.from.match(/^(0x)?[0-9a-f]{40}$/i)) { throw new Error('Invalid from address.'); }
+        if (!cmd.host) cmd.host = DEFAULT_WEB3_HOST;
+        if (!cmd.from) throw new Error('From address required (-f, --from <address>).');
+        if (!cmd.from.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid from address.');
 
         // Initialise web3
         let web3 = new Web3(cmd.host);
