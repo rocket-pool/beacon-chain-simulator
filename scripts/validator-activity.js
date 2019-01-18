@@ -10,14 +10,17 @@ cmd
     .option('-p, --pubkey <key>', 'The public BLS key for the validator')
     .parse(process.argv);
 
-// Withdraw validator
-function validatorWithdraw() {
+// Perform validator activity
+function validatorActivity() {
     try {
 
         // Process CLI arguments
         if (!cmd.host) cmd.host = DEFAULT_BEACON_HOST;
         if (!cmd.pubkey) throw new Error('Validator BLS pubkey required (-p, --pubkey <key>).');
         if (!cmd.pubkey.match(/^[0-9a-f]{96}$/i)) throw new Error('Invalid validator BLS pubkey.');
+
+        // Validator active
+        let active = false;
 
         // Initialise websocket connection
         let ws = new WebSocket(cmd.host);
@@ -41,52 +44,43 @@ function validatorWithdraw() {
                         if (data.pubkey != cmd.pubkey) break;
                         switch (data.status.code) {
 
-                            // Not exited
+                            // Inactive
                             case 'inactive':
+                                console.log('Validator is inactive, waiting until active...');
+                                active = false;
+                            break;
+
+                            // Active
                             case 'active':
-                                if (data.status.initiated.exit) {
-                                    console.log('Validator is exiting...');
-                                    break;
-                                }
-                                console.log('Validator has not exited, exiting...');
-                                ws.send(JSON.stringify({
-                                    message: 'exit',
-                                    pubkey: cmd.pubkey, // TODO: replace public key with signature
-                                }));
+                                console.log('Validator is active, sending activity...');
+                                active = true;
                             break;
 
                             // Exited
                             case 'exited':
-                                console.log('Validator has exited, waiting until withdrawable...');
-                            break;
-
-                            // Withdrawable
                             case 'withdrawable':
-                                if (data.status.initiated.withdrawal) {
-                                    console.log('Validator is withdrawing...');
-                                    break;
-                                }
-                                console.log('Validator is withdrawable, withdrawing...');
-                                ws.send(JSON.stringify({
-                                    message: 'withdraw',
-                                    pubkey: cmd.pubkey, // TODO: replace public key with signature
-                                }));
-                            break;
-
-                            // Withdrawn
                             case 'withdrawn':
-                                console.log('Validator withdrew successfully');
+                                console.log('Validator has exited, closing connection');
                                 ws.close();
                             break;
 
                         }
                     break;
 
+                    // Epoch
+                    case 'epoch':
+                        if (!active) break;
+                        console.log('New epoch, sending activity...');
+                        ws.send(JSON.stringify({
+                            message: 'activity',
+                            pubkey: cmd.pubkey,
+                        }));
+                    break;
+
                     // Success response
                     case 'success':
                         switch (data.action) {
-                            case 'initiate_exit': console.log('Validator initiated exit successfully...'); break;
-                            case 'initiate_withdrawal': console.log('Validator initiated withdrawal successfully...'); break;
+                            case 'process_activity': console.log('Processed validator activity successfully...'); break;
                         }
                     break;
 
@@ -115,4 +109,4 @@ function validatorWithdraw() {
         console.log(e.message);
     }
 }
-validatorWithdraw();
+validatorActivity();

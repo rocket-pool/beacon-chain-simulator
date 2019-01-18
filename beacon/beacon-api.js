@@ -17,6 +17,11 @@ class BeaconAPI {
         // Initialise params
         this.beaconChain = beaconChain;
 
+        // Broadcast beacon chain epochs
+        this.beaconChain.on('epoch', (number) => {
+            this.broadcastEpoch(number);
+        });
+
         // Broadcast validator status events
         this.beaconChain.on('validator.status', (status, validator) => {
             this.broadcastValidatorStatus(status, validator);
@@ -42,6 +47,20 @@ class BeaconAPI {
 
         });
 
+    }
+
+
+    /**
+     * Broadcast epoch
+     * @param number The epoch number
+     */
+    broadcastEpoch(number) {
+        this.wss.clients.forEach(ws => {
+            ws.send(JSON.stringify({
+                message: 'epoch',
+                number: number,
+            }));
+        });
     }
 
 

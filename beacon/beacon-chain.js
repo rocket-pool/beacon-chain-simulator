@@ -268,6 +268,9 @@ class BeaconChain extends EventEmitter {
 
         });
 
+        // Emit epoch event
+        if (this.slot % EPOCH_LENGTH == 0) this.emit('epoch', Math.floor(this.slot / EPOCH_LENGTH));
+
     }
 
 
