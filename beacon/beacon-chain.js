@@ -17,6 +17,7 @@ const VALIDATOR_WITHDRAWAL_TIME = 10; // Slots
 
 // Status flags
 const INITIATED_EXIT = 1;
+const INITIATED_WITHDRAWAL = 2;
 
 
 /**
@@ -125,6 +126,32 @@ class BeaconChain extends EventEmitter {
 
 
     /**
+     * Request a validator withdrawal
+     * @param pubkey The public key of the validator to withdraw
+     * @return true on success or false on failure
+     */
+    requestValidatorWithdrawal(pubkey) {
+
+        // Get validator index
+        let index = this.getValidatorIndex(pubkey);
+        if (index == -1) return false;
+
+        // Check validator state
+        let validator = this.validatorRegistry[index];
+        if (validator.exitSlot > this.slot - VALIDATOR_WITHDRAWAL_TIME) return false; // Not withdrawable
+        if (validator.withdrawalSlot <= this.slot) return false; // Already withdrawn
+        if (validator.statusFlags & INITIATED_WITHDRAWAL) return false; // Already initiated
+
+        // TODO: verify BLS signature when implemented
+
+        // Initiate withdrawal
+        this.initiateValidatorWithdrawal(index);
+        return true;
+
+    }
+
+
+    /**
      * =======================
      * Beacon state management
      * =======================
@@ -156,12 +183,12 @@ class BeaconChain extends EventEmitter {
         // Process epochs
         if (this.slot % EPOCH_LENGTH == 0) this.processEpoch();
 
-        // Emit validator events
+        // Emit validator status events
         this.validatorRegistry.forEach((v, vi) => {
-            if (v.activationSlot == this.slot) this.emit('validator.status', 'activated', v);
-            if (v.exitSlot == this.slot) this.emit('validator.status', 'exited', v);
-            if (v.exitSlot == this.slot - VALIDATOR_WITHDRAWAL_TIME) this.emit('validator.status', 'withdrawable', v);
-            if (v.withdrawalSlot == this.slot) this.emit('validator.status', 'withdrawn', v);
+            if (v.activationSlot == this.slot) this.emit('validator.status', 'active', v, this.validatorBalances[vi]);
+            if (v.exitSlot == this.slot) this.emit('validator.status', 'exited', v, this.validatorBalances[vi]);
+            if (v.exitSlot == this.slot - VALIDATOR_WITHDRAWAL_TIME) this.emit('validator.status', 'withdrawable', v, this.validatorBalances[vi]);
+            if (v.withdrawalSlot == this.slot) this.emit('validator.status', 'withdrawn', v, this.validatorBalances[vi]);
         });
 
     }
@@ -204,6 +231,15 @@ class BeaconChain extends EventEmitter {
             ) {
                 this.exitValidator(vi);
                 console.log('  '+'Ejecting validator %s with balance %d at slot %d', v.pubkey, this.validatorBalances[vi], v.exitSlot);
+            }
+
+            // Withdraw pending validators
+            if (
+                v.withdrawalSlot > this.slot && // Not withdrawn
+                v.statusFlags & INITIATED_WITHDRAWAL // Initiated withdrawal
+            ) {
+                this.withdrawValidator(vi);
+                console.log('  '+'Withdrawing validator %s with balance %d at slot %d', v.pubkey, this.validatorBalances[vi], v.withdrawalSlot);
             }
 
         });
@@ -288,6 +324,15 @@ class BeaconChain extends EventEmitter {
 
 
     /**
+     * Initiate validator withdrawal
+     * @param index The index of the validator to withdraw
+     */
+    initiateValidatorWithdrawal(index) {
+        this.validatorRegistry[index].statusFlags |= INITIATED_WITHDRAWAL;
+    }
+
+
+    /**
      * Activate a validator
      * @param index The index of the validator to activate
      */
@@ -302,6 +347,15 @@ class BeaconChain extends EventEmitter {
      */
     exitValidator(index) {
         this.validatorRegistry[index].exitSlot = this.slot + ENTRY_EXIT_DELAY;
+    }
+
+
+    /**
+     * Withdraw a validator
+     * @param index The index of the validator to withdraw
+     */
+    withdrawValidator(index) {
+        this.validatorRegistry[index].withdrawalSlot = this.slot;
     }
 
 

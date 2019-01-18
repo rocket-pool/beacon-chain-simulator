@@ -35,15 +35,46 @@ async function validatorWithdraw() {
         ws.on('message', (payload) => {
             try {
                 let data = JSON.parse(payload);
-                switch (true) {
+                switch (data.message) {
 
-                    // Success
-                    case (data.message == 'success' && data.action == 'initiate_exit'):
-                        console.log('Validator initiated exit successfully...');
+                    // Validator status
+                    case 'validator_status':
+                        if (data.pubkey != cmd.pubkey) break;
+                        switch (data.status) {
+
+                            // Exited
+                            case 'exited':
+                                console.log('Validator exited successfully...');
+                            break;
+
+                            // Withdrawable
+                            case 'withdrawable':
+                                console.log('Validator is withdrawable, withdrawing...');
+                                ws.send(JSON.stringify({
+                                    message: 'withdraw',
+                                    pubkey: cmd.pubkey,
+                                }));
+                            break;
+
+                            // Withdrawn
+                            case 'withdrawn':
+                                console.log('Validator withdrew successfully');
+                                ws.close();
+                            break;
+
+                        }
+                    break;
+
+                    // Success response
+                    case 'success':
+                        switch (data.action) {
+                            case 'initiate_exit': console.log('Validator initiated exit successfully...'); break;
+                            case 'initiate_withdrawal': console.log('Validator initiated withdrawal successfully...'); break;
+                        }
                     break;
 
                     // Error
-                    case (data.message == 'error'):
+                    case 'error':
                         console.log('A server error occurred:', data.error);
                         ws.close();
                     break;

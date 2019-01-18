@@ -18,8 +18,8 @@ class BeaconAPI {
         this.beaconChain = beaconChain;
 
         // Broadcast validator status events
-        this.beaconChain.on('validator.status', (type, validator) => {
-            this.broadcastValidatorStatus(type, validator);
+        this.beaconChain.on('validator.status', (status, validator) => {
+            this.broadcastValidatorStatus(status, validator);
         });
 
         // Initialise websocket server
@@ -47,11 +47,17 @@ class BeaconAPI {
 
     /**
      * Broadcast validator status
-     * @param type The type of validator status
+     * @param status The type of validator status
      * @param validator The validator with updated status
      */
-    broadcastValidatorStatus(type, validator) {
-        
+    broadcastValidatorStatus(status, validator) {
+        this.wss.clients.forEach(ws => {
+            ws.send(JSON.stringify({
+                message: 'validator_status',
+                status: status,
+                pubkey: validator.pubkey,
+            }));
+        });
     }
 
 
@@ -78,6 +84,21 @@ class BeaconAPI {
                     ws.send(JSON.stringify({
                         message: 'success',
                         action: 'initiate_exit',
+                    }));
+
+                break;
+
+                // Withdraw
+                case 'withdraw':
+
+                    // Request validator withdrawal
+                    let initiatedWithdrawal = this.beaconChain.requestValidatorWithdrawal(data.pubkey);
+                    if (!initiatedWithdrawal) throw new Error('Unable to initiate validator withdrawal');
+
+                    // Send response
+                    ws.send(JSON.stringify({
+                        message: 'success',
+                        action: 'initiate_withdrawal',
                     }));
 
                 break;
