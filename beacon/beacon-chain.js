@@ -111,15 +111,23 @@ class BeaconChain extends EventEmitter {
         let index = this.getValidatorIndex(pubkey);
         if (index == -1) return false;
 
-        // Return status
+        // Get status
+        let status;
         let validator = this.validatorRegistry[index];
-        if (validator.withdrawalSlot <= this.slot) return 'withdrawn';
-        if (validator.statusFlags & INITIATED_WITHDRAWAL) return 'withdrawing';
-        if (validator.exitSlot <= this.slot - VALIDATOR_WITHDRAWAL_TIME) return 'withdrawable';
-        if (validator.exitSlot <= this.slot) return 'exited';
-        if (validator.statusFlags & INITIATED_EXIT) return 'exiting';
-        if (validator.activationSlot <= this.slot) return 'active';
-        return 'inactive';
+        if (validator.withdrawalSlot <= this.slot) status = 'withdrawn';
+        else if (validator.exitSlot <= this.slot - VALIDATOR_WITHDRAWAL_TIME) status = 'withdrawable';
+        else if (validator.exitSlot <= this.slot) status = 'exited';
+        else if (validator.activationSlot <= this.slot) status = 'active';
+        else status = 'inactive';
+
+        // Return status
+        return {
+            code: status,
+            initiated: {
+                exit: validator.statusFlags & INITIATED_EXIT,
+                withdrawal: validator.statusFlags & INITIATED_WITHDRAWAL,
+            },
+        };
 
     }
 
@@ -209,10 +217,24 @@ class BeaconChain extends EventEmitter {
 
         // Emit validator status events
         this.validatorRegistry.forEach((v, vi) => {
-            if (v.activationSlot == this.slot) this.emit('validator.status', 'active', v, this.validatorBalances[vi]);
-            if (v.exitSlot == this.slot) this.emit('validator.status', 'exited', v, this.validatorBalances[vi]);
-            if (v.exitSlot == this.slot - VALIDATOR_WITHDRAWAL_TIME) this.emit('validator.status', 'withdrawable', v, this.validatorBalances[vi]);
-            if (v.withdrawalSlot == this.slot) this.emit('validator.status', 'withdrawn', v, this.validatorBalances[vi]);
+
+            // Get status
+            let status = null;
+            if (v.withdrawalSlot == this.slot) status = 'withdrawn';
+            else if (v.exitSlot == this.slot - VALIDATOR_WITHDRAWAL_TIME) status = 'withdrawable';
+            else if (v.exitSlot == this.slot) status = 'exited';
+            else if (v.activationSlot == this.slot) status = 'active';
+            if (!status) return;
+
+            // Emit status event
+            this.emit('validator.status', {
+                code: status,
+                initiated: {
+                    exit: v.statusFlags & INITIATED_EXIT,
+                    withdrawal: v.statusFlags & INITIATED_WITHDRAWAL,
+                },
+            }, v);
+
         });
 
     }

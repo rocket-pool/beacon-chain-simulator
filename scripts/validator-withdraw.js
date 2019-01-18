@@ -39,25 +39,20 @@ async function validatorWithdraw() {
                     // Validator status
                     case 'validator_status':
                         if (data.pubkey != cmd.pubkey) break;
-                        switch (data.status) {
+                        switch (data.status.code) {
 
-                            // Inactive
+                            // Not exited
                             case 'inactive':
-                                console.log('Validator is inactive, waiting until active...');
-                            break;
-
-                            // Active
                             case 'active':
-                                console.log('Validator is active, exiting...');
+                                if (data.status.initiated.exit) {
+                                    console.log('Validator is exiting...');
+                                    break;
+                                }
+                                console.log('Validator has not exited, exiting...');
                                 ws.send(JSON.stringify({
                                     message: 'exit',
                                     pubkey: cmd.pubkey, // TODO: replace public key with signature
                                 }));
-                            break;
-
-                            // Exiting
-                            case 'exiting':
-                                console.log('Validator is exiting...');
                             break;
 
                             // Exited
@@ -67,16 +62,15 @@ async function validatorWithdraw() {
 
                             // Withdrawable
                             case 'withdrawable':
+                                if (data.status.initiated.withdrawal) {
+                                    console.log('Validator is withdrawing...');
+                                    break;
+                                }
                                 console.log('Validator is withdrawable, withdrawing...');
                                 ws.send(JSON.stringify({
                                     message: 'withdraw',
                                     pubkey: cmd.pubkey, // TODO: replace public key with signature
                                 }));
-                            break;
-
-                            // Withdrawing
-                            case 'withdrawing':
-                                console.log('Validator is withdrawing...');
                             break;
 
                             // Withdrawn
