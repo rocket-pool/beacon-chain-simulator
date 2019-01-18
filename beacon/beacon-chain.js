@@ -19,6 +19,10 @@ const VALIDATOR_WITHDRAWAL_TIME = 10; // Slots
 const INITIATED_EXIT = 1;
 const INITIATED_WITHDRAWAL = 2;
 
+// Rewards and penalties
+const ACTIVITY_REWARD_QUOTIENT = 512;
+const INACTIVITY_PENALTY_QUOTIENT = 512;
+
 
 /**
  * Beacon chain service
@@ -39,6 +43,9 @@ class BeaconChain extends EventEmitter {
         // Validator registry
         this.validatorRegistry = [];
         this.validatorBalances = [];
+
+        // Validator activity log
+        this.validatorActivity = [];
 
     }
 
@@ -128,6 +135,30 @@ class BeaconChain extends EventEmitter {
                 withdrawal: validator.statusFlags & INITIATED_WITHDRAWAL,
             },
         };
+
+    }
+
+
+    /**
+     * Process validator activity
+     * @param pubkey The public key of the validator to process activity for
+     * @return true on success or false on failure
+     */
+    processValidatorActivity(pubkey) {
+
+        // Get validator index
+        let index = this.getValidatorIndex(pubkey);
+        if (index == -1) return false;
+
+        // Check validator status
+        let validator = this.validatorRegistry[index];
+        if (validator.activationSlot > this.slot || validator.exitSlot <= this.slot) return false; // Not active
+
+        // TODO: verify BLS signature when implemented
+
+        // Record activity
+        this.validatorActivity.push(pubkey);
+        return true;
 
     }
 
@@ -249,7 +280,7 @@ class BeaconChain extends EventEmitter {
         console.log('Processing epoch...');
         console.log('  '+'Current slot: %d', this.slot);
 
-        // Process validators
+        // Process validator states
         this.validatorRegistry.forEach((v, vi) => {
 
             // Activate pending validators
@@ -290,6 +321,27 @@ class BeaconChain extends EventEmitter {
 
         });
 
+        // Process rewards & penalties
+        this.getActiveValidatorIndices().forEach(vi => {
+            let v = this.validatorRegistry[vi];
+
+            // Apply penalties
+            if (this.validatorActivity.indexOf(v.pubkey) == -1) {
+                this.penaliseValidator(vi);
+                console.log('  '+'Penalising validator %s for inactivity, balance reduced to %d', v.pubkey, this.validatorBalances[vi]);
+            }
+
+            // Apply rewards
+            else {
+                this.rewardValidator(vi);
+                console.log('  '+'Rewarding validator %s for activity, balance increased to %d', v.pubkey, this.validatorBalances[vi]);
+            }
+
+        });
+
+        // Clear validator activity log
+        this.validatorActivity = [];
+
         // Logging
         console.log('Processing complete.');
 
@@ -320,7 +372,7 @@ class BeaconChain extends EventEmitter {
     getActiveValidatorIndices() {
         var indices = [];
         this.validatorRegistry.forEach((v, vi) => {
-            if (v.activationSlot <= this.slot && v.exitSlot > this.slot) indices.push(vi);
+            if (v.activationSlot < this.slot && v.exitSlot > this.slot) indices.push(vi);
         });
         return indices;
     }
@@ -402,6 +454,26 @@ class BeaconChain extends EventEmitter {
      */
     withdrawValidator(index) {
         this.validatorRegistry[index].withdrawalSlot = this.slot;
+    }
+
+
+    /**
+     * Apply rewards to a validator
+     * @param index The index of the validator to reward
+     */
+    rewardValidator(index) {
+        let effectiveBalance = Math.min(this.validatorBalances[index], DEPOSIT_SIZE);
+        this.validatorBalances[index] += Math.floor(effectiveBalance / ACTIVITY_REWARD_QUOTIENT);
+    }
+
+
+    /**
+     * Apply penalties to a validator
+     * @param index The index of the validator to penalise
+     */
+    penaliseValidator(index) {
+        let effectiveBalance = Math.min(this.validatorBalances[index], DEPOSIT_SIZE);
+        this.validatorBalances[index] -= Math.floor(effectiveBalance / INACTIVITY_PENALTY_QUOTIENT);
     }
 
 

@@ -89,6 +89,21 @@ class BeaconAPI {
 
                 break;
 
+                // Validator activity
+                case 'activity':
+
+                    // Process validator activity
+                    let success = this.beaconChain.processValidatorActivity(data.pubkey);
+                    if (!success) throw new Error('Unable to process validator activity');
+
+                    // Send response
+                    ws.send(JSON.stringify({
+                        message: 'success',
+                        action: 'process_activity',
+                    }));
+
+                break;
+
                 // Exit
                 case 'exit':
 
