@@ -17,6 +17,11 @@ class BeaconAPI {
         // Initialise params
         this.beaconChain = beaconChain;
 
+        // Broadcast validator status events
+        this.beaconChain.on('validator.status', (type, validator) => {
+            this.broadcastValidatorStatus(type, validator);
+        });
+
         // Initialise websocket server
         this.wss = new WebSocket.Server({
             port: cmd.apiPort
@@ -41,6 +46,16 @@ class BeaconAPI {
 
 
     /**
+     * Broadcast validator status
+     * @param type The type of validator status
+     * @param validator The validator with updated status
+     */
+    broadcastValidatorStatus(type, validator) {
+        
+    }
+
+
+    /**
      * Process client messages
      * @param ws The websocket client
      * @param payload The message data payload
@@ -55,14 +70,14 @@ class BeaconAPI {
                 // Exit
                 case 'exit':
 
-                    // Attempt validator exit
-                    let exited = this.beaconChain.initiateValidatorExit(data.pubkey);
-                    if (!exited) throw new Error('Unable to initiate validator exit');
+                    // Request validator exit
+                    let initiatedExit = this.beaconChain.requestValidatorExit(data.pubkey);
+                    if (!initiatedExit) throw new Error('Unable to initiate validator exit');
 
                     // Send response
                     ws.send(JSON.stringify({
                         message: 'success',
-                        action: 'exit',
+                        action: 'initiate_exit',
                     }));
 
                 break;

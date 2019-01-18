@@ -1,5 +1,8 @@
+const EventEmitter = require('events');
+
+
 // Deposits
-const MAX_DEPOSIT = 32000000000; // gwei
+const DEPOSIT_SIZE = 32000000000; // gwei
 const EJECTION_BALANCE = 16000000000; // gwei
 
 // Initial values
@@ -10,23 +13,23 @@ const FAR_FUTURE_SLOT = Math.pow(2, 64) - 1;
 const SLOT_DURATION = 2000; // ms
 const EPOCH_LENGTH = 5; // Slots
 const ENTRY_EXIT_DELAY = 10; // Slots
-const MIN_VALIDATOR_WITHDRAWAL_TIME = 10; // Slots
+const VALIDATOR_WITHDRAWAL_TIME = 10; // Slots
 
 // Status flags
 const INITIATED_EXIT = 1;
-const WITHDRAWABLE = 2;
 
 
 /**
  * Beacon chain service
  */
-class BeaconChain {
+class BeaconChain extends EventEmitter {
 
 
     /**
      * Constructor
      */
     constructor() {
+        super();
 
         // Beacon state
         this.slot = GENESIS_SLOT;
@@ -58,9 +61,9 @@ class BeaconChain {
 
 
     /**
-     * =================
-     * External handlers
-     * =================
+     * ==================
+     * External interface
+     * ==================
      */
 
 
@@ -97,6 +100,31 @@ class BeaconChain {
 
 
     /**
+     * Request a validator exit
+     * @param pubkey The public key of the validator to exit
+     * @return true on success or false on failure
+     */
+    requestValidatorExit(pubkey) {
+
+        // Get validator index
+        let index = this.getValidatorIndex(pubkey);
+        if (index == -1) return false;
+
+        // Check validator state
+        let validator = this.validatorRegistry[index];
+        if (validator.exitSlot <= this.slot + ENTRY_EXIT_DELAY) return false; // Already exited
+        if (validator.statusFlags & INITIATED_EXIT) return false; // Already initiated
+
+        // TODO: verify BLS signature when implemented
+
+        // Initiate exit
+        this.initiateValidatorExit(index);
+        return true;
+
+    }
+
+
+    /**
      * =======================
      * Beacon state management
      * =======================
@@ -128,6 +156,14 @@ class BeaconChain {
         // Process epochs
         if (this.slot % EPOCH_LENGTH == 0) this.processEpoch();
 
+        // Emit validator events
+        this.validatorRegistry.forEach((v, vi) => {
+            if (v.activationSlot == this.slot) this.emit('validator.status', 'activated', v);
+            if (v.exitSlot == this.slot) this.emit('validator.status', 'exited', v);
+            if (v.exitSlot == this.slot - VALIDATOR_WITHDRAWAL_TIME) this.emit('validator.status', 'withdrawable', v);
+            if (v.withdrawalSlot == this.slot) this.emit('validator.status', 'withdrawn', v);
+        });
+
     }
 
 
@@ -146,7 +182,7 @@ class BeaconChain {
             // Activate pending validators
             if (
                 v.activationSlot > this.slot + ENTRY_EXIT_DELAY && // Pending activation
-                this.validatorBalances[vi] >= MAX_DEPOSIT // Sufficient balance
+                this.validatorBalances[vi] >= DEPOSIT_SIZE // Sufficient balance
             ) {
                 this.activateValidator(vi);
                 console.log('  '+'Activating validator %s with balance %d at slot %d', v.pubkey, this.validatorBalances[vi], v.activationSlot);
@@ -244,26 +280,10 @@ class BeaconChain {
 
     /**
      * Initiate validator exit
-     * @param pubkey The public key of the validator to exit
-     * @return true on success or false on failure
+     * @param index The index of the validator to exit
      */
-    initiateValidatorExit(pubkey) {
-
-        // Get validator index
-        let index = this.getValidatorIndex(pubkey);
-        if (index == -1) return false;
-
-        // Check validator state
-        let validator = this.validatorRegistry[index];
-        if (validator.exitSlot <= this.slot + ENTRY_EXIT_DELAY) return false;
-        if (validator.statusFlags & INITIATED_EXIT) return false;
-
-        // TODO: verify BLS signature when implemented
-
-        // Set validator status
-        validator.statusFlags |= INITIATED_EXIT;
-        return true;
-
+    initiateValidatorExit(index) {
+        this.validatorRegistry[index].statusFlags |= INITIATED_EXIT;
     }
 
 

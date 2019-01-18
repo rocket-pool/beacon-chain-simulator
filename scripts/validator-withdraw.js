@@ -10,8 +10,8 @@ cmd
     .option('-p, --pubkey <key>', 'The public BLS key for the validator')
     .parse(process.argv);
 
-// Send validator exit message
-async function validatorExit() {
+// Withdraw validator
+async function validatorWithdraw() {
     try {
 
         // Process CLI arguments
@@ -35,29 +35,31 @@ async function validatorExit() {
         ws.on('message', (payload) => {
             try {
                 let data = JSON.parse(payload);
-                switch (data.message) {
+                switch (true) {
 
                     // Success
-                    case 'success':
-                        console.log('Validator initiated exit successfully');
+                    case (data.message == 'success' && data.action == 'initiate_exit'):
+                        console.log('Validator initiated exit successfully...');
                     break;
 
                     // Error
-                    case 'error':
+                    case (data.message == 'error'):
                         console.log('A server error occurred:', data.error);
+                        ws.close();
                     break;
 
                     // Unknown
                     default:
                         console.log('Unknown server response:', data);
+                        ws.close();
                     break;
 
                 }
             }
             catch (e) {
                 console.log('Invalid server response:', e.message);
+                ws.close();
             }
-            ws.close();
         });
 
     }
@@ -65,4 +67,4 @@ async function validatorExit() {
         console.log(e.message);
     }
 }
-validatorExit();
+validatorWithdraw();
