@@ -41,14 +41,23 @@ async function validatorWithdraw() {
                         if (data.pubkey != cmd.pubkey) break;
                         switch (data.status) {
 
-                            // Inactive / active
+                            // Inactive
                             case 'inactive':
+                                console.log('Validator is inactive, waiting until active...');
+                            break;
+
+                            // Active
                             case 'active':
-                                console.log('Validator has not exited, exiting...');
+                                console.log('Validator is active, exiting...');
                                 ws.send(JSON.stringify({
                                     message: 'exit',
                                     pubkey: cmd.pubkey, // TODO: replace public key with signature
                                 }));
+                            break;
+
+                            // Exiting
+                            case 'exiting':
+                                console.log('Validator is exiting...');
                             break;
 
                             // Exited
@@ -63,6 +72,11 @@ async function validatorWithdraw() {
                                     message: 'withdraw',
                                     pubkey: cmd.pubkey, // TODO: replace public key with signature
                                 }));
+                            break;
+
+                            // Withdrawing
+                            case 'withdrawing':
+                                console.log('Validator is withdrawing...');
                             break;
 
                             // Withdrawn

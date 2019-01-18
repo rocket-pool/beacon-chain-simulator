@@ -10,7 +10,7 @@ const GENESIS_SLOT = 0;
 const FAR_FUTURE_SLOT = Math.pow(2, 64) - 1;
 
 // Time parameters
-const SLOT_DURATION = 2000; // ms
+const SLOT_DURATION = 1000; // ms
 const EPOCH_LENGTH = 5; // Slots
 const ENTRY_EXIT_DELAY = 10; // Slots
 const VALIDATOR_WITHDRAWAL_TIME = 10; // Slots
@@ -114,8 +114,10 @@ class BeaconChain extends EventEmitter {
         // Return status
         let validator = this.validatorRegistry[index];
         if (validator.withdrawalSlot <= this.slot) return 'withdrawn';
+        if (validator.statusFlags & INITIATED_WITHDRAWAL) return 'withdrawing';
         if (validator.exitSlot <= this.slot - VALIDATOR_WITHDRAWAL_TIME) return 'withdrawable';
         if (validator.exitSlot <= this.slot) return 'exited';
+        if (validator.statusFlags & INITIATED_EXIT) return 'exiting';
         if (validator.activationSlot <= this.slot) return 'active';
         return 'inactive';
 
