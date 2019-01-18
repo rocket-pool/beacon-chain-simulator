@@ -73,6 +73,22 @@ class BeaconAPI {
             let data = JSON.parse(payload);
             switch (data.message) {
 
+                // Get validator status
+                case 'get_validator_status':
+
+                    // Get validator status
+                    let status = this.beaconChain.getValidatorStatus(data.pubkey);
+                    if (!status) throw new Error('Unable to get validator status');
+
+                    // Send response
+                    ws.send(JSON.stringify({
+                        message: 'validator_status',
+                        status: status,
+                        pubkey: data.pubkey,
+                    }));
+
+                break;
+
                 // Exit
                 case 'exit':
 

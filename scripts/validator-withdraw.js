@@ -22,11 +22,10 @@ async function validatorWithdraw() {
         // Initialise websocket connection
         let ws = new WebSocket(cmd.host);
 
-        // Send exit message on connection open
-        // TODO: replace public key with signature
+        // Request validator status on connection open
         ws.on('open', () => {
             ws.send(JSON.stringify({
-                message: 'exit',
+                message: 'get_validator_status',
                 pubkey: cmd.pubkey,
             }));
         });
@@ -42,9 +41,19 @@ async function validatorWithdraw() {
                         if (data.pubkey != cmd.pubkey) break;
                         switch (data.status) {
 
+                            // Inactive / active
+                            case 'inactive':
+                            case 'active':
+                                console.log('Validator has not exited, exiting...');
+                                ws.send(JSON.stringify({
+                                    message: 'exit',
+                                    pubkey: cmd.pubkey, // TODO: replace public key with signature
+                                }));
+                            break;
+
                             // Exited
                             case 'exited':
-                                console.log('Validator exited successfully...');
+                                console.log('Validator has exited, waiting until withdrawable...');
                             break;
 
                             // Withdrawable
@@ -52,7 +61,7 @@ async function validatorWithdraw() {
                                 console.log('Validator is withdrawable, withdrawing...');
                                 ws.send(JSON.stringify({
                                     message: 'withdraw',
-                                    pubkey: cmd.pubkey,
+                                    pubkey: cmd.pubkey, // TODO: replace public key with signature
                                 }));
                             break;
 

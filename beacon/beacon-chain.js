@@ -101,6 +101,28 @@ class BeaconChain extends EventEmitter {
 
 
     /**
+     * Get a validator's status
+     * @param The public key of the validator
+     * @return The validator's status or false if not found
+     */
+    getValidatorStatus(pubkey) {
+
+        // Get validator index
+        let index = this.getValidatorIndex(pubkey);
+        if (index == -1) return false;
+
+        // Return status
+        let validator = this.validatorRegistry[index];
+        if (validator.withdrawalSlot <= this.slot) return 'withdrawn';
+        if (validator.exitSlot <= this.slot - VALIDATOR_WITHDRAWAL_TIME) return 'withdrawable';
+        if (validator.exitSlot <= this.slot) return 'exited';
+        if (validator.activationSlot <= this.slot) return 'active';
+        return 'inactive';
+
+    }
+
+
+    /**
      * Request a validator exit
      * @param pubkey The public key of the validator to exit
      * @return true on success or false on failure
