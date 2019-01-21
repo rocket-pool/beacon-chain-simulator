@@ -61,6 +61,7 @@ function validatorActivity() {
                             case 'withdrawable':
                             case 'withdrawn':
                                 console.log('Validator has exited, closing connection');
+                                active = false;
                                 ws.close();
                             break;
 
@@ -87,12 +88,6 @@ function validatorActivity() {
                     // Error
                     case 'error':
                         console.log('A server error occurred:', data.error);
-                        ws.close();
-                    break;
-
-                    // Unknown
-                    default:
-                        console.log('Unknown server response:', data);
                         ws.close();
                     break;
 
