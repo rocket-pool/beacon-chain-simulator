@@ -23,7 +23,7 @@ class BeaconAPI {
         });
 
         // Broadcast validator status events
-        this.beaconChain.on('validator.status', (status, validator) => {
+        this.beaconChain.on('validator.status', (status, validator, balance) => {
             this.broadcastValidatorStatus(status, validator);
         });
 
@@ -142,7 +142,7 @@ class BeaconAPI {
                 case 'withdraw':
 
                     // Request validator withdrawal
-                    let initiatedWithdrawal = this.beaconChain.requestValidatorWithdrawal(data.pubkey);
+                    let initiatedWithdrawal = this.beaconChain.requestValidatorWithdrawal(data.pubkey, data.toAddress);
                     if (!initiatedWithdrawal) throw new Error('Unable to initiate validator withdrawal');
 
                     // Send response

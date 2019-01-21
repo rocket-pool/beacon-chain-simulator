@@ -191,13 +191,17 @@ class BeaconChain extends EventEmitter {
     /**
      * Request a validator withdrawal
      * @param pubkey The public key of the validator to withdraw
+     * @param toAddress The address to withdraw the deposit to
      * @return true on success or false on failure
      */
-    requestValidatorWithdrawal(pubkey) {
+    requestValidatorWithdrawal(pubkey, toAddress) {
 
         // Get validator index
         let index = this.getValidatorIndex(pubkey);
         if (index == -1) return false;
+
+        // Check to address
+        if (!toAddress.match(/^(0x)?[0-9a-f]{40}$/i)) return false; // Invalid to address
 
         // Check validator state
         let validator = this.validatorRegistry[index];
@@ -208,7 +212,7 @@ class BeaconChain extends EventEmitter {
         // TODO: verify BLS signature when implemented
 
         // Initiate withdrawal
-        this.initiateValidatorWithdrawal(index);
+        this.initiateValidatorWithdrawal(index, toAddress);
         return true;
 
     }
@@ -264,7 +268,7 @@ class BeaconChain extends EventEmitter {
                     exit: v.statusFlags & INITIATED_EXIT,
                     withdrawal: v.statusFlags & INITIATED_WITHDRAWAL,
                 },
-            }, v);
+            }, v, this.validatorBalances[vi]);
 
         });
 
@@ -400,6 +404,7 @@ class BeaconChain extends EventEmitter {
             exitSlot: FAR_FUTURE_SLOT,
             withdrawalSlot: FAR_FUTURE_SLOT,
             statusFlags: 0,
+            withdrawalAddress: null,
         });
         return this.validatorBalances.push(amount) - 1;
     }
@@ -427,9 +432,11 @@ class BeaconChain extends EventEmitter {
     /**
      * Initiate validator withdrawal
      * @param index The index of the validator to withdraw
+     * @param toAddress The address to withdraw the deposit to
      */
-    initiateValidatorWithdrawal(index) {
+    initiateValidatorWithdrawal(index, toAddress) {
         this.validatorRegistry[index].statusFlags |= INITIATED_WITHDRAWAL;
+        this.validatorRegistry[index].withdrawalAddress = toAddress;
     }
 
 

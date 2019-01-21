@@ -8,6 +8,7 @@ const DEFAULT_BEACON_HOST = 'http://127.0.0.1:8555';
 cmd
     .option('-h, --host <address>', 'The address of the beacon chain host')
     .option('-p, --pubkey <key>', 'The public BLS key for the validator')
+    .option('-t, --toAddress <address>', 'The address to withdraw the deposit to')
     .parse(process.argv);
 
 // Withdraw validator
@@ -18,6 +19,8 @@ function validatorWithdraw() {
         if (!cmd.host) cmd.host = DEFAULT_BEACON_HOST;
         if (!cmd.pubkey) throw new Error('Validator BLS pubkey required (-p, --pubkey <key>).');
         if (!cmd.pubkey.match(/^[0-9a-f]{96}$/i)) throw new Error('Invalid validator BLS pubkey.');
+        if (!cmd.toAddress) throw new Error('To address required (-t, --toAddress <address>).');
+        if (!cmd.toAddress.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid to address.');
 
         // Initialise websocket connection
         let ws = new WebSocket(cmd.host);
@@ -70,6 +73,7 @@ function validatorWithdraw() {
                                 ws.send(JSON.stringify({
                                     message: 'withdraw',
                                     pubkey: cmd.pubkey, // TODO: replace public key with signature
+                                    toAddress: cmd.toAddress,
                                 }));
                             break;
 
@@ -93,12 +97,6 @@ function validatorWithdraw() {
                     // Error
                     case 'error':
                         console.log('A server error occurred:', data.error);
-                        ws.close();
-                    break;
-
-                    // Unknown
-                    default:
-                        console.log('Unknown server response:', data);
                         ws.close();
                     break;
 

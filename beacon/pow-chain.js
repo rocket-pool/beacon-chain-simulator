@@ -5,6 +5,7 @@ const Web3 = require('web3');
 
 // Get contract data
 const depositContractABI = JSON.parse(fs.readFileSync(__dirname + '/../contracts/casper/Deposit.abi'));
+const withdrawalContractABI = JSON.parse(fs.readFileSync(__dirname + '/../build/contracts/Withdraw.json')).abi;
 
 
 /**
@@ -16,30 +17,37 @@ class PowChain extends EventEmitter {
     /**
      * Initialise
      * @param cmd Application commands
+     * @param beaconChain Beacon chain service
      */
-    init(cmd) {
+    init(cmd, beaconChain) {
 
         // Initialise web3
         this.web3 = new Web3(cmd.powHost);
 
-        // Initialise deposit contract
-        let depositContract = new this.web3.eth.Contract(depositContractABI, cmd.depositContract);
+        // Initialise contracts
+        this.depositContract = new this.web3.eth.Contract(depositContractABI, cmd.depositContract);
+        this.withdrawalContract = new this.web3.eth.Contract(withdrawalContractABI, cmd.withdrawalContract, {from: cmd.from, gas: 8000000});
 
         // Process existing deposit contract deposit events
-        depositContract.getPastEvents('Deposit', {fromBlock: 0}).then((events) => {
+        this.depositContract.getPastEvents('Deposit', {fromBlock: 0}).then((events) => {
             events.forEach(event => { this.processDepositEvent(event); });
         });
 
         // Subscribe to new deposit contract deposit events
-        depositContract.events.Deposit().on('data', (event) => {
+        this.depositContract.events.Deposit().on('data', (event) => {
             this.processDepositEvent(event);
+        });
+
+        // Process beacon chain withdrawal events
+        beaconChain.on('validator.status', (status, validator, balance) => {
+            if (status.code == 'withdrawn') this.processWithdrawalEvent(validator, balance);
         });
 
     }
 
 
     /**
-     * Process deposit events
+     * Process main chain deposit events
      * @param event The deposit event
      */
     processDepositEvent(event) {
@@ -78,6 +86,29 @@ class PowChain extends EventEmitter {
             depositInput.randao_commitment,
             depositInput.custody_commitment
         );
+
+    }
+
+
+    /**
+     * Process beacon chain withdrawal events
+     * @param validator The withdrawn validator
+     * @param amount The amount withdrawn
+     */
+    async processWithdrawalEvent(validator, amount) {
+
+        // Get initial withdrawal address balance
+        let balance1 = await this.web3.eth.getBalance(validator.withdrawalAddress);
+
+        // Send main chain withdrawal transaction
+        let result = await this.withdrawalContract.methods.withdraw(validator.withdrawalAddress, this.web3.utils.toWei(''+amount, 'gwei')).send();
+
+        // Get withdrawal address balance difference
+        let balance2 = await this.web3.eth.getBalance(validator.withdrawalAddress);
+        let diff = (balance2 - balance1) / 1000000000000000000;
+
+        // Log
+        console.log('Validator %s balance withdrawn to %s, address balance increased by %d ETH', validator.pubkey, validator.withdrawalAddress, diff);
 
     }
 

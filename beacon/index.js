@@ -14,6 +14,8 @@ cmd
     .option('-h, --powHost <address>', 'The address of the PoW chain web3 host')
     .option('-p, --apiPort <port>', 'The beacon API websocket port')
     .option('-d, --depositContract <address>', 'The address of the Casper Deposit contract')
+    .option('-w, --withdrawalContract <address>', 'The address of the Casper Withdrawal contract')
+    .option('-f, --from <address>', 'The address to make Casper Withdrawal transactions from')
     .parse(process.argv);
 
 // Start beacon chain simulator
@@ -26,6 +28,10 @@ function start() {
         if (!cmd.apiPort.match(/^\d{1,5}$/)) throw new Error('Invalid beacon API websocket port.');
         if (!cmd.depositContract) throw new Error('Deposit contract address required (-d, --depositContract <address>).');
         if (!cmd.depositContract.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid deposit contract address.');
+        if (!cmd.withdrawalContract) throw new Error('Withdrawal contract address required (-d, --withdrawalContract <address>).');
+        if (!cmd.withdrawalContract.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid withdrawal contract address.');
+        if (!cmd.from) throw new Error('From address required (-f, --from <address>).');
+        if (!cmd.from.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid from address.');
 
         // Create services
         let beaconChain = new BeaconChain();
@@ -34,7 +40,7 @@ function start() {
 
         // Initialise services
         beaconChain.init(cmd, powChain);
-        powChain.init(cmd);
+        powChain.init(cmd, beaconChain);
         beaconAPI.init(cmd, beaconChain);
 
     }
