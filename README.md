@@ -1,4 +1,4 @@
-#Beacon Chain Simulator
+# Beacon Chain Simulator
 
 ## Running the Beacon Chain Simulator
 
