@@ -31,13 +31,13 @@ contract Withdraw {
     /**
      * Default payable function
      */
-    function() public payable {}
+    function() external payable {}
 
 
     /**
      * Withdraw from Casper
      */
-    function withdraw(address payable _to, uint256 _amount) public onlyOwner {
+    function withdraw(address payable _to, uint256 _amount) external onlyOwner {
 
         // Check arguments
         require(_to != address(0x0), "Invalid to address");
