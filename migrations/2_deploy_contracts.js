@@ -25,6 +25,13 @@ module.exports = async (deployer, network, accounts) => {
         gas: net.gas,
     });
 
+    // Log
+    console.log('');
+    console.log('   Deploying \'Deposit\'');
+    console.log('   -------------------');
+    console.log('   > contract address:    ' + depositContractInstance.options.address);
+    console.log('');
+
     // Deploy withdrawal contract
     await deployer.deploy(Withdraw);
 
