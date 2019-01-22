@@ -117,18 +117,12 @@ class PowChain extends EventEmitter {
      */
     async processWithdrawalEvent(validator, amount) {
 
-        // Get initial withdrawal address balance
-        let balance1 = await this.web3.eth.getBalance(validator.withdrawalAddress);
-
         // Send main chain withdrawal transaction
         let result = await this.withdrawalContract.methods.withdraw(validator.withdrawalAddress, this.web3.utils.toWei(''+amount, 'gwei')).send();
 
-        // Get withdrawal address balance difference
-        let balance2 = await this.web3.eth.getBalance(validator.withdrawalAddress);
-        let diff = (balance2 - balance1) / 1000000000000000000;
-
         // Log
-        console.log('Validator %s balance withdrawn to %s, address balance increased by %d ETH', validator.pubkey, validator.withdrawalAddress, diff);
+        let ethAmount = this.web3.utils.fromWei(result.events.Withdrawal.returnValues.amount, 'ether');
+        console.log('Validator %s balance of %d ETH withdrawn to %s', validator.pubkey, ethAmount, validator.withdrawalAddress);
 
     }
 
