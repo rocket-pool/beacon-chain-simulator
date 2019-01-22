@@ -37,8 +37,8 @@ class BeaconChain extends EventEmitter {
         super();
 
         // Beacon state
-        this.slot = GENESIS_SLOT;
         this.genesisTime = 0;
+        this.slot = GENESIS_SLOT;
 
         // Validator registry
         this.validatorRegistry = [];
@@ -85,6 +85,8 @@ class BeaconChain extends EventEmitter {
     getSchema() {
         return  {
             genesisTime: 0,
+            validatorRegistry: [],
+            validatorBalances: [],
         };
     }
 
@@ -253,6 +255,7 @@ class BeaconChain extends EventEmitter {
 
         // Start slot processing
         this.slotTimer = setInterval(() => { this.processSlot(); }, SLOT_DURATION);
+        this.processSlot();
 
     }
 
@@ -413,7 +416,9 @@ class BeaconChain extends EventEmitter {
      * @return The index of the new validator
      */
     addValidator(pubkey, amount, withdrawalCredentials, randaoCommitment, custodyCommitment) {
-        this.validatorRegistry.push({
+
+        // Create validator record
+        let validator = {
             pubkey,
             withdrawalCredentials,
             randaoCommitment,
@@ -423,8 +428,18 @@ class BeaconChain extends EventEmitter {
             withdrawalSlot: FAR_FUTURE_SLOT,
             statusFlags: 0,
             withdrawalAddress: null,
-        });
-        return this.validatorBalances.push(amount) - 1;
+        };
+
+        // Add validator
+        this.validatorRegistry.push(validator);
+        this.validatorBalances.push(amount);
+
+        // Update database
+        this.db.get('validatorRegistry').push(validator).write();
+        this.db.get('validatorBalances').push(amount).write();
+
+        // Return validator index
+        return this.validatorRegistry.length - 1;
     }
 
 
@@ -435,6 +450,7 @@ class BeaconChain extends EventEmitter {
      */
     increaseValidatorBalance(index, amount) {
         this.validatorBalances[index] += amount;
+        this.writeValidatorBalance(index);
     }
 
 
@@ -444,6 +460,7 @@ class BeaconChain extends EventEmitter {
      */
     initiateValidatorExit(index) {
         this.validatorRegistry[index].statusFlags |= INITIATED_EXIT;
+        this.writeValidatorRecord(index);
     }
 
 
@@ -455,6 +472,7 @@ class BeaconChain extends EventEmitter {
     initiateValidatorWithdrawal(index, toAddress) {
         this.validatorRegistry[index].statusFlags |= INITIATED_WITHDRAWAL;
         this.validatorRegistry[index].withdrawalAddress = toAddress;
+        this.writeValidatorRecord(index);
     }
 
 
@@ -464,6 +482,7 @@ class BeaconChain extends EventEmitter {
      */
     activateValidator(index) {
         this.validatorRegistry[index].activationSlot = this.slot + ENTRY_EXIT_DELAY;
+        this.writeValidatorRecord(index);
     }
 
 
@@ -473,6 +492,7 @@ class BeaconChain extends EventEmitter {
      */
     exitValidator(index) {
         this.validatorRegistry[index].exitSlot = this.slot + ENTRY_EXIT_DELAY;
+        this.writeValidatorRecord(index);
     }
 
 
@@ -482,6 +502,7 @@ class BeaconChain extends EventEmitter {
      */
     withdrawValidator(index) {
         this.validatorRegistry[index].withdrawalSlot = this.slot;
+        this.writeValidatorRecord(index);
     }
 
 
@@ -492,6 +513,7 @@ class BeaconChain extends EventEmitter {
     rewardValidator(index) {
         let effectiveBalance = Math.min(this.validatorBalances[index], DEPOSIT_SIZE);
         this.validatorBalances[index] += Math.floor(effectiveBalance / ACTIVITY_REWARD_QUOTIENT);
+        this.writeValidatorBalance(index);
     }
 
 
@@ -502,6 +524,25 @@ class BeaconChain extends EventEmitter {
     penaliseValidator(index) {
         let effectiveBalance = Math.min(this.validatorBalances[index], DEPOSIT_SIZE);
         this.validatorBalances[index] -= Math.floor(effectiveBalance / INACTIVITY_PENALTY_QUOTIENT);
+        this.writeValidatorBalance(index);
+    }
+
+
+    /**
+     * Write a validator record to the database
+     * @param index The index of the validator to write
+     */
+    writeValidatorRecord(index) {
+        this.db.get('validatorRegistry[' + index + ']').assign(this.validatorRegistry[index]).write();
+    }
+
+
+    /**
+     * Write a validator balance to the database
+     * @param index The index of the validator to write
+     */
+    writeValidatorBalance(index) {
+        this.db.set('validatorBalances[' + index + ']', this.validatorBalances[index]).write();
     }
 
 
