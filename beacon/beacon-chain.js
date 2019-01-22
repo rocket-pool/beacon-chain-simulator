@@ -61,6 +61,10 @@ class BeaconChain extends EventEmitter {
         // Initialise params
         this.db = db;
 
+        // Initialise validator registry from db state
+        this.validatorRegistry = this.db.get('validatorRegistry').value().slice();
+        this.validatorBalances = this.db.get('validatorBalances').value().slice();
+
         // Process PoW chain deposits
         powChain.on('deposit', (...args) => {
             this.processDeposit(...args);
@@ -110,8 +114,8 @@ class BeaconChain extends EventEmitter {
 
         // Add validator if it doesn't exist
         if (index == -1) {
-            this.addValidator(pubkey, amount, withdrawalCredentials, randaoCommitment, custodyCommitment);
-            console.log('Added validator %s with balance %d at index %d', pubkey, amount, this.validatorRegistry.length);
+            let i = this.addValidator(pubkey, amount, withdrawalCredentials, randaoCommitment, custodyCommitment);
+            console.log('Added validator %s with balance %d at index %d', pubkey, amount, i);
         }
 
         // Increase balance if validator exists
