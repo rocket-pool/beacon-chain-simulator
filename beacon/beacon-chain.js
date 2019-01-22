@@ -53,9 +53,13 @@ class BeaconChain extends EventEmitter {
     /**
      * Initialise
      * @param cmd Application commands
+     * @param db Database service
      * @param powChain PoW chain service
      */
-    init(cmd, powChain) {
+    init(cmd, db, powChain) {
+
+        // Initialise params
+        this.db = db;
 
         // Process PoW chain deposits
         powChain.on('deposit', (...args) => {
@@ -73,6 +77,16 @@ class BeaconChain extends EventEmitter {
      * External interface
      * ==================
      */
+
+
+    /**
+     * Beacon chain database schema
+     */
+    getSchema() {
+        return  {
+            genesisTime: 0,
+        };
+    }
 
 
     /**
@@ -230,8 +244,12 @@ class BeaconChain extends EventEmitter {
      */
     start() {
 
-        // Set genesis time
-        this.genesisTime = Date.now();
+        // Get or initialise genesis time
+        this.genesisTime = this.db.get('genesisTime').value();
+        if (!this.genesisTime) {
+            this.genesisTime = Date.now();
+            this.db.set('genesisTime', this.genesisTime).write();
+        }
 
         // Start slot processing
         this.slotTimer = setInterval(() => { this.processSlot(); }, SLOT_DURATION);

@@ -1,6 +1,7 @@
 const cmd = require('commander');
 const BeaconAPI = require('./beacon-api');
 const BeaconChain = require('./beacon-chain');
+const DB = require('./db');
 const PowChain = require('./pow-chain');
 
 // Default PoW web3 host
@@ -34,13 +35,15 @@ function start() {
         if (!cmd.from.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid from address.');
 
         // Create services
+        let db = new DB();
         let beaconChain = new BeaconChain();
         let powChain = new PowChain();
         let beaconAPI = new BeaconAPI();
 
         // Initialise services
-        beaconChain.init(cmd, powChain);
-        powChain.init(cmd, beaconChain);
+        db.init([beaconChain, powChain]);
+        beaconChain.init(cmd, db.db, powChain);
+        powChain.init(cmd, db.db, beaconChain);
         beaconAPI.init(cmd, beaconChain);
 
     }

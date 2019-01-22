@@ -3,6 +3,7 @@ const fs = require('fs');
 const ssz = require('ssz');
 const Web3 = require('web3');
 
+
 // Get contract data
 const depositContractABI = JSON.parse(fs.readFileSync(__dirname + '/../contracts/casper/Deposit.abi'));
 const withdrawalContractABI = JSON.parse(fs.readFileSync(__dirname + '/../build/contracts/Withdraw.json')).abi;
@@ -17,9 +18,13 @@ class PowChain extends EventEmitter {
     /**
      * Initialise
      * @param cmd Application commands
+     * @param db Database service
      * @param beaconChain Beacon chain service
      */
-    init(cmd, beaconChain) {
+    init(cmd, db, beaconChain) {
+
+        // Initialise params
+        this.db = db;
 
         // Initialise web3
         this.web3 = new Web3(cmd.powHost);
@@ -47,10 +52,25 @@ class PowChain extends EventEmitter {
 
 
     /**
+     * PoW chain database schema
+     */
+    getSchema() {
+        return {
+            processedDepositEvents: [],
+        };
+    }
+
+
+    /**
      * Process main chain deposit events
      * @param event The deposit event
      */
     processDepositEvent(event) {
+
+        // Check and cache event processed status
+        let processedEvent = this.db.get('processedDepositEvents').find({id: event.id}).value();
+        if (processedEvent) return;
+        this.db.get('processedDepositEvents').push({id: event.id}).write();
 
         // Get deposit data
         let depositData = Buffer.from(event.returnValues.data.substr(2), 'hex');
