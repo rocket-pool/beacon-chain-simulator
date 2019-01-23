@@ -62,8 +62,10 @@ class BeaconChain extends EventEmitter {
         this.db = db;
 
         // Initialise validator registry from db state
-        this.validatorRegistry = this.db.get('validatorRegistry').value().slice();
-        this.validatorBalances = this.db.get('validatorBalances').value().slice();
+        if (this.db) {
+            this.validatorRegistry = this.db.get('validatorRegistry').value().slice();
+            this.validatorBalances = this.db.get('validatorBalances').value().slice();
+        }
 
         // Process PoW chain deposits
         powChain.on('deposit', (...args) => {
@@ -251,10 +253,10 @@ class BeaconChain extends EventEmitter {
     start() {
 
         // Get or initialise genesis time
-        this.genesisTime = this.db.get('genesisTime').value();
+        if (this.db) this.genesisTime = this.db.get('genesisTime').value();
         if (!this.genesisTime) {
             this.genesisTime = Date.now();
-            this.db.set('genesisTime', this.genesisTime).write();
+            if (this.db) this.db.set('genesisTime', this.genesisTime).write();
         }
 
         // Start slot processing
@@ -439,8 +441,10 @@ class BeaconChain extends EventEmitter {
         this.validatorBalances.push(amount);
 
         // Update database
-        this.db.get('validatorRegistry').push(validator).write();
-        this.db.get('validatorBalances').push(amount).write();
+        if (this.db) {
+            this.db.get('validatorRegistry').push(validator).write();
+            this.db.get('validatorBalances').push(amount).write();
+        }
 
         // Return validator index
         return this.validatorRegistry.length - 1;
@@ -537,7 +541,7 @@ class BeaconChain extends EventEmitter {
      * @param index The index of the validator to write
      */
     writeValidatorRecord(index) {
-        this.db.get('validatorRegistry[' + index + ']').assign(this.validatorRegistry[index]).write();
+        if (this.db) this.db.get('validatorRegistry[' + index + ']').assign(this.validatorRegistry[index]).write();
     }
 
 
@@ -546,7 +550,7 @@ class BeaconChain extends EventEmitter {
      * @param index The index of the validator to write
      */
     writeValidatorBalance(index) {
-        this.db.set('validatorBalances[' + index + ']', this.validatorBalances[index]).write();
+        if (this.db) this.db.set('validatorBalances[' + index + ']', this.validatorBalances[index]).write();
     }
 
 

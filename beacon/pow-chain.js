@@ -68,9 +68,11 @@ class PowChain extends EventEmitter {
     processDepositEvent(event) {
 
         // Check and cache event processed status
-        let processedEvent = this.db.get('processedDepositEvents').find({id: event.id}).value();
-        if (processedEvent) return;
-        this.db.get('processedDepositEvents').push({id: event.id}).write();
+        if (this.db) {
+            let processedEvent = this.db.get('processedDepositEvents').find({id: event.id}).value();
+            if (processedEvent) return;
+            this.db.get('processedDepositEvents').push({id: event.id}).write();
+        }
 
         // Get deposit data
         let depositData = Buffer.from(event.returnValues.data.substr(2), 'hex');

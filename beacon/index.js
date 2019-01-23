@@ -17,6 +17,7 @@ cmd
     .option('-d, --depositContract <address>', 'The address of the Casper Deposit contract')
     .option('-w, --withdrawalContract <address>', 'The address of the Casper Withdrawal contract')
     .option('-f, --from <address>', 'The address to make Casper Withdrawal transactions from')
+    .option('-n, --noDatabase', 'Do not use a database for persistent beacon chain state')
     .parse(process.argv);
 
 // Start beacon chain simulator
@@ -33,17 +34,18 @@ function start() {
         if (!cmd.withdrawalContract.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid withdrawal contract address.');
         if (!cmd.from) throw new Error('From address required (-f, --from <address>).');
         if (!cmd.from.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid from address.');
+        cmd.noDatabase = !!cmd.noDatabase;
 
         // Create services
-        let db = new DB();
+        let db = (cmd.noDatabase ? null : new DB());
         let beaconChain = new BeaconChain();
         let powChain = new PowChain();
         let beaconAPI = new BeaconAPI();
 
         // Initialise services
-        db.init([beaconChain, powChain]);
-        beaconChain.init(cmd, db.db, powChain);
-        powChain.init(cmd, db.db, beaconChain);
+        if (!cmd.noDatabase) db.init([beaconChain, powChain]);
+        beaconChain.init(cmd, (cmd.noDatabase ? null : db.db), powChain);
+        powChain.init(cmd, (cmd.noDatabase ? null : db.db), beaconChain);
         beaconAPI.init(cmd, beaconChain);
 
     }
