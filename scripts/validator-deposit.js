@@ -45,6 +45,10 @@ async function validatorDeposit() {
         // Initialise web3
         let web3 = new Web3(cmd.host);
 
+        // Check deposit contract
+        let code = await web3.eth.getCode(cmd.depositContract);
+        if (code == '0x' || code == '0x0') throw new Error('Casper Deposit contract not deployed at address' + cmd.depositContract + '.');
+
         // Initialise contract
         let depositContract = new web3.eth.Contract(depositContractABI, cmd.depositContract);
 
