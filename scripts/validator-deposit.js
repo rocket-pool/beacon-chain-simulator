@@ -1,6 +1,6 @@
 const fs = require('fs');
 const cmd = require('commander');
-const ssz = require('ssz');
+const ssz = require('@chainsafesystems/ssz');
 const Web3 = require('web3');
 
 // Default web3 host
@@ -53,7 +53,7 @@ async function validatorDeposit() {
         ], 32);
 
         // Get proof of possession
-        // TODO: implement correctly once hash_tree_root functionality is available in SSZ
+        // TODO: implement correctly once BLS library found
         let proofOfPossession = Buffer.from(
             '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' +
             '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' +
@@ -66,13 +66,13 @@ async function validatorDeposit() {
             {
                 'pubkey': Buffer.from(cmd.pubkey, 'hex'),
                 'withdrawal_credentials': withdrawalCredentials,
-                'proof_of_possession': [proofOfPossession.slice(0, 48), proofOfPossession.slice(48, 96)],
+                'proof_of_possession': proofOfPossession,
             },
-            {fields: {
-                'pubkey': 'uint384',
-                'withdrawal_credentials': 'hash32',
-                'proof_of_possession': ['uint384'],
-            }}
+            {fields: [
+                ['pubkey', 'bytes48'],
+                ['withdrawal_credentials', 'bytes32'],
+                ['proof_of_possession', 'bytes96'],
+            ]}
         );
 
         // Deposit

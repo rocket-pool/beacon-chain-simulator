@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const fs = require('fs');
-const ssz = require('ssz');
+const ssz = require('@chainsafesystems/ssz');
 const Web3 = require('web3');
 
 
@@ -81,17 +81,15 @@ class PowChain extends EventEmitter {
         let depositInputEncoded = depositData.slice(16);
 
         // Decode deposit input
-        let depositInputData = ssz.deserialize(depositInputEncoded, 0, {fields: {
-            'pubkey': 'uint384',
-            'withdrawal_credentials': 'hash32',
-            'proof_of_possession': ['uint384'],
-        }});
+        let depositInputData = ssz.deserialize(depositInputEncoded, 0, {fields: [
+            ['pubkey', 'bytes48'],
+            ['withdrawal_credentials', 'bytes32'],
+            ['proof_of_possession', 'bytes96'],
+        ]});
         let depositInput = {
-            pubkey: this.web3.utils.numberToHex(depositInputData.deserializedData.pubkey).substr(2).padStart(96, '0'),
+            pubkey: depositInputData.deserializedData.pubkey.toString('hex'),
             withdrawal_credentials: depositInputData.deserializedData.withdrawal_credentials.toString('hex'),
-            proof_of_possession:
-                this.web3.utils.numberToHex(depositInputData.deserializedData.proof_of_possession[0]).substr(2).padStart(96, '0') +
-                this.web3.utils.numberToHex(depositInputData.deserializedData.proof_of_possession[1]).substr(2).padStart(96, '0'),
+            proof_of_possession: depositInputData.deserializedData.proof_of_possession.toString('hex'),
         };
 
         // Decode deposit amount
