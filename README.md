@@ -52,9 +52,7 @@ node scripts/validator-deposit.js \
     --from 0xc46c4661dd9bd08627a38b5fcba15776ae667978 \
     --amount 32 \
     --pubkey 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd01 \
-    --withdrawalPubkey 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
-    --randaoCommitment 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
-    --custodyCommitment 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    --withdrawalPubkey 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 ```
 
 5. Start the validator activity script:

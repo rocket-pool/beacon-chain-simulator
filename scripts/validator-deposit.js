@@ -17,8 +17,6 @@ cmd
     .option('-a, --amount <number>', 'The amount in ETH to deposit')
     .option('-p, --pubkey <key>', 'The public BLS key for the validator')
     .option('-w, --withdrawalPubkey <key>', 'The public BLS key for withdrawal from Casper')
-    .option('-r, --randaoCommitment <hash32>', 'The validator\'s randao commitment hash')
-    .option('-c, --custodyCommitment <hash32>', 'The validator\'s custody commitment hash')
     .parse(process.argv);
 
 // Send validator deposit
@@ -37,10 +35,6 @@ async function validatorDeposit() {
         if (!cmd.pubkey.match(/^[0-9a-f]{96}$/i)) throw new Error('Invalid validator BLS pubkey.');
         if (!cmd.withdrawalPubkey) throw new Error('Withdrawal BLS pubkey required (-w, --withdrawalPubkey <key>).');
         if (!cmd.withdrawalPubkey.match(/^[0-9a-f]{96}$/i)) throw new Error('Invalid withdrawal BLS pubkey.');
-        if (!cmd.randaoCommitment) throw new Error('Randao commitment required (-r, --randaoCommitment <hash32>).');
-        if (!cmd.randaoCommitment.match(/^[0-9a-f]{64}$/i)) throw new Error('Invalid randao commitment.');
-        if (!cmd.custodyCommitment) throw new Error('Custody commitment required (-c, --custodyCommitment <hash32>).');
-        if (!cmd.custodyCommitment.match(/^[0-9a-f]{64}$/i)) throw new Error('Invalid custody commitment.');
 
         // Initialise web3
         let web3 = new Web3(cmd.host);
@@ -58,23 +52,26 @@ async function validatorDeposit() {
             Buffer.from(web3.utils.sha3(cmd.withdrawalPubkey).substr(2), 'hex').slice(1) // Last 31 bytes of withdrawal pubkey hash
         ], 32);
 
-        // TODO: implement proof of possession once hash_tree_root functionality is available in SSZ
+        // Get proof of possession
+        // TODO: implement correctly once hash_tree_root functionality is available in SSZ
+        let proofOfPossession = Buffer.from(
+            '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' +
+            '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' +
+            '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+            'hex'
+        );
 
         // Get deposit input
         let depositInput = ssz.serialize(
             {
                 'pubkey': Buffer.from(cmd.pubkey, 'hex'),
                 'withdrawal_credentials': withdrawalCredentials,
-                'randao_commitment': Buffer.from(cmd.randaoCommitment, 'hex'),
-                'custody_commitment': Buffer.from(cmd.custodyCommitment, 'hex'),
-                //'proof_of_possession': ,
+                'proof_of_possession': [proofOfPossession.slice(0, 48), proofOfPossession.slice(48, 96)],
             },
             {fields: {
                 'pubkey': 'uint384',
                 'withdrawal_credentials': 'hash32',
-                'randao_commitment': 'hash32',
-                'custody_commitment': 'hash32',
-                //'proof_of_possession': ['uint384'],
+                'proof_of_possession': ['uint384'],
             }}
         );
 

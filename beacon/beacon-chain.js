@@ -103,10 +103,8 @@ class BeaconChain extends EventEmitter {
      * @param amount The validator's deposit amount in gwei
      * @param proofOfPossession The validator's proof of possession
      * @param withdrawalCredentials The validator's withdrawal credentials
-     * @param randaoCommitment The validator's randao commitment
-     * @param custodyCommitment The validator's custody commitment
      */
-    processDeposit(pubkey, amount, proofOfPossession, withdrawalCredentials, randaoCommitment, custodyCommitment) {
+    processDeposit(pubkey, amount, proofOfPossession, withdrawalCredentials) {
 
         // Validate proof of possession
         // TODO: validate once implemented
@@ -116,7 +114,7 @@ class BeaconChain extends EventEmitter {
 
         // Add validator if it doesn't exist
         if (index == -1) {
-            let i = this.addValidator(pubkey, amount, withdrawalCredentials, randaoCommitment, custodyCommitment);
+            let i = this.addValidator(pubkey, amount, withdrawalCredentials);
             console.log('Added validator %s with balance %d at index %d', pubkey, amount, i);
         }
 
@@ -417,18 +415,14 @@ class BeaconChain extends EventEmitter {
      * @param pubkey The validator's public key
      * @param amount The validator's deposit amount in gwei
      * @param withdrawalCredentials The validator's withdrawal credentials
-     * @param randaoCommitment The validator's randao commitment
-     * @param custodyCommitment The validator's custody commitment
      * @return The index of the new validator
      */
-    addValidator(pubkey, amount, withdrawalCredentials, randaoCommitment, custodyCommitment) {
+    addValidator(pubkey, amount, withdrawalCredentials) {
 
         // Create validator record
         let validator = {
             pubkey,
             withdrawalCredentials,
-            randaoCommitment,
-            custodyCommitment,
             activationSlot: FAR_FUTURE_SLOT,
             exitSlot: FAR_FUTURE_SLOT,
             withdrawalSlot: FAR_FUTURE_SLOT,

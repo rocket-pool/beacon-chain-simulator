@@ -81,19 +81,17 @@ class PowChain extends EventEmitter {
         let depositInputEncoded = depositData.slice(16);
 
         // Decode deposit input
-        // TODO: add proof of possession field once implemented
         let depositInputData = ssz.deserialize(depositInputEncoded, 0, {fields: {
             'pubkey': 'uint384',
             'withdrawal_credentials': 'hash32',
-            'randao_commitment': 'hash32',
-            'custody_commitment': 'hash32',
-            //'proof_of_possession': ['uint384'],
+            'proof_of_possession': ['uint384'],
         }});
         let depositInput = {
             pubkey: this.web3.utils.numberToHex(depositInputData.deserializedData.pubkey).substr(2).padStart(96, '0'),
             withdrawal_credentials: depositInputData.deserializedData.withdrawal_credentials.toString('hex'),
-            randao_commitment: depositInputData.deserializedData.randao_commitment.toString('hex'),
-            custody_commitment: depositInputData.deserializedData.custody_commitment.toString('hex'),
+            proof_of_possession:
+                this.web3.utils.numberToHex(depositInputData.deserializedData.proof_of_possession[0]).substr(2).padStart(96, '0') +
+                this.web3.utils.numberToHex(depositInputData.deserializedData.proof_of_possession[1]).substr(2).padStart(96, '0'),
         };
 
         // Decode deposit amount
@@ -103,10 +101,8 @@ class PowChain extends EventEmitter {
         this.emit('deposit',
             depositInput.pubkey,
             depositAmountGwei,
-            null,
-            depositInput.withdrawal_credentials,
-            depositInput.randao_commitment,
-            depositInput.custody_commitment
+            depositInput.proof_of_possession,
+            depositInput.withdrawal_credentials
         );
 
     }
