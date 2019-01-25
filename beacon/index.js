@@ -8,7 +8,7 @@ const PowChain = require('./pow-chain');
 const DEFAULT_POW_WEB3_HOST = 'ws://127.0.0.1:8545';
 
 // Default beacon API websocket port
-const DEFAULT_API_WS_PORT = '8555';
+const DEFAULT_API_WS_PORT = '9545';
 
 // Initialisa CLI
 cmd

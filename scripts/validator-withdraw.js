@@ -2,7 +2,7 @@ const cmd = require('commander');
 const WebSocket = require('ws');
 
 // Default beacon chain host
-const DEFAULT_BEACON_HOST = 'http://127.0.0.1:8555';
+const DEFAULT_BEACON_HOST = 'http://127.0.0.1:9545';
 
 // Initialise CLI
 cmd
