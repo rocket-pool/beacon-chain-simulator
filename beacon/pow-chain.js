@@ -6,7 +6,7 @@ const Web3 = require('web3');
 
 // Get contract data
 const depositContractABI = JSON.parse(fs.readFileSync(__dirname + '/../contracts/casper/Deposit.abi'));
-const withdrawalContractABI = JSON.parse(fs.readFileSync(__dirname + '/../build/contracts/Withdraw.json')).abi;
+const withdrawalContractABI = JSON.parse(fs.readFileSync(__dirname + '/../contracts/compiled/Withdraw.abi'));
 
 
 /**
