@@ -49,7 +49,7 @@ async function validatorDeposit() {
         // Get withdrawal credentials
         let withdrawalCredentials = Buffer.concat([
             Buffer.from('00', 'hex'), // BLS_WITHDRAWAL_PREFIX_BYTE
-            Buffer.from(web3.utils.sha3(cmd.withdrawalPubkey).substr(2), 'hex').slice(1) // Last 31 bytes of withdrawal pubkey hash
+            Buffer.from(web3.utils.sha3(Buffer.from(cmd.withdrawalPubkey, 'hex')).substr(2), 'hex').slice(1) // Last 31 bytes of withdrawal pubkey hash
         ], 32);
 
         // Get proof of possession
