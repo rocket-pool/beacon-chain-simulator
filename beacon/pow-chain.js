@@ -81,7 +81,7 @@ class PowChain extends EventEmitter {
         let depositInputEncoded = depositData.slice(16);
 
         // Decode deposit input
-        let depositInputData = ssz.deserialize(depositInputEncoded, 0, {fields: [
+        let depositInputData = ssz.deserialize(depositInputEncoded, {fields: [
             ['pubkey', 'bytes48'],
             ['withdrawal_credentials', 'bytes32'],
             ['proof_of_possession', 'bytes96'],
