@@ -24,7 +24,7 @@ class BeaconAPI {
 
         // Broadcast validator status events
         this.beaconChain.on('validator.status', (status, validator, balance) => {
-            this.broadcastValidatorStatus(status, validator);
+            this.broadcastValidatorStatus(status, validator, balance);
         });
 
         // Initialise websocket server
@@ -69,12 +69,13 @@ class BeaconAPI {
      * @param status The type of validator status
      * @param validator The validator with updated status
      */
-    broadcastValidatorStatus(status, validator) {
+    broadcastValidatorStatus(status, validator, balance) {
         this.wss.clients.forEach(ws => {
             ws.send(JSON.stringify({
                 message: 'validator_status',
                 status: status,
                 pubkey: validator.pubkey,
+                balance: balance,
             }));
         });
     }
@@ -97,13 +98,15 @@ class BeaconAPI {
 
                     // Get validator status
                     let status = this.beaconChain.getValidatorStatus(data.pubkey);
-                    if (!status) throw new Error('Unable to get validator status');
+                    let balance = this.beaconChain.getValidatorBalance(data.pubkey);
+                    if (!status || balance === false) throw new Error('Unable to get validator status');
 
                     // Send response
                     ws.send(JSON.stringify({
                         message: 'validator_status',
                         status: status,
                         pubkey: data.pubkey,
+                        balance: balance,
                     }));
 
                 break;

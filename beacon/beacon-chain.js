@@ -160,6 +160,21 @@ class BeaconChain extends EventEmitter {
 
 
     /**
+     * Get a validator's balance
+     */
+    getValidatorBalance(pubkey) {
+
+        // Get validator index
+        let index = this.getValidatorIndex(pubkey);
+        if (index == -1) return false;
+
+        // Return balance
+        return this.validatorBalances[index];
+
+    }
+
+
+    /**
      * Process validator activity
      * @param pubkey The public key of the validator to process activity for
      * @return true on success or false on failure
