@@ -46,37 +46,25 @@ async function validatorDeposit() {
         // Initialise contract
         let depositContract = new web3.eth.Contract(depositContractABI, cmd.depositContract);
 
+        // Get pubkey
+        let pubkey = Buffer.from(cmd.pubkey, 'hex');
+
         // Get withdrawal credentials
         let withdrawalCredentials = Buffer.concat([
             Buffer.from('00', 'hex'), // BLS_WITHDRAWAL_PREFIX_BYTE
             Buffer.from(web3.utils.sha3(Buffer.from(cmd.withdrawalPubkey, 'hex')).substr(2), 'hex').slice(1) // Last 31 bytes of withdrawal pubkey hash
         ], 32);
 
-        // Get proof of possession
+        // Get signature
         // TODO: implement correctly once BLS library found
-        let proofOfPossession = Buffer.from(
+        let signature = Buffer.from(
             '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' +
             '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' +
             '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
-            'hex'
-        );
-
-        // Get deposit input
-        let depositInput = ssz.serialize(
-            {
-                'pubkey': Buffer.from(cmd.pubkey, 'hex'),
-                'withdrawal_credentials': withdrawalCredentials,
-                'proof_of_possession': proofOfPossession,
-            },
-            {fields: [
-                ['pubkey', 'bytes48'],
-                ['withdrawal_credentials', 'bytes32'],
-                ['proof_of_possession', 'bytes96'],
-            ]}
-        );
+        'hex');
 
         // Deposit
-        await depositContract.methods.deposit(depositInput).send({
+        await depositContract.methods.deposit(pubkey, withdrawalCredentials, signature).send({
             from: cmd.from,
             value: web3.utils.toWei(cmd.amount, 'ether'),
             gas: 8000000,
