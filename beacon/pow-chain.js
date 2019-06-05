@@ -74,33 +74,15 @@ class PowChain extends EventEmitter {
             this.db.get('processedDepositEvents').push({id: event.id}).write();
         }
 
-        // Get deposit data
-        let depositData = Buffer.from(event.returnValues.data.substr(2), 'hex');
-        let depositAmountGweiEncoded = depositData.slice(0, 8);
-        let depositTimestampEncoded = depositData.slice(8, 16);
-        let depositInputEncoded = depositData.slice(16);
-
-        // Decode deposit input
-        let depositInputData = ssz.deserialize(depositInputEncoded, {fields: [
-            ['pubkey', 'bytes48'],
-            ['withdrawal_credentials', 'bytes32'],
-            ['proof_of_possession', 'bytes96'],
-        ]});
-        let depositInput = {
-            pubkey: depositInputData.deserializedData.pubkey.toString('hex'),
-            withdrawal_credentials: depositInputData.deserializedData.withdrawal_credentials.toString('hex'),
-            proof_of_possession: depositInputData.deserializedData.proof_of_possession.toString('hex'),
-        };
-
-        // Decode deposit amount
-        let depositAmountGwei = parseInt(depositAmountGweiEncoded.toString('hex'), 16);
+        // Get deposit amount
+        let amountGwei = parseInt(Buffer.from(event.returnValues.amount.substr(2), 'hex').swap64().toString('hex'), 16);
 
         // Emit deposit event
         this.emit('deposit',
-            depositInput.pubkey,
-            depositAmountGwei,
-            depositInput.proof_of_possession,
-            depositInput.withdrawal_credentials
+            event.returnValues.pubkey.substr(2),
+            event.returnValues.withdrawal_credentials.substr(2),
+            amountGwei,
+            event.returnValues.signature.substr(2)
         );
 
     }

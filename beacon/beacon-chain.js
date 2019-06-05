@@ -100,13 +100,13 @@ class BeaconChain extends EventEmitter {
     /**
      * Process a PoW chain deposit
      * @param pubkey The validator's public key
-     * @param amount The validator's deposit amount in gwei
-     * @param proofOfPossession The validator's proof of possession
      * @param withdrawalCredentials The validator's withdrawal credentials
+     * @param amount The validator's deposit amount in gwei
+     * @param signature The validator's deposit signature
      */
-    processDeposit(pubkey, amount, proofOfPossession, withdrawalCredentials) {
+    processDeposit(pubkey, withdrawalCredentials, amount, signature) {
 
-        // Validate proof of possession
+        // Validate signature
         // TODO: validate once implemented
 
         // Check for existing validator
