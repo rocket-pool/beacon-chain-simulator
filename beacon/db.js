@@ -2,10 +2,6 @@ const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
 
 
-// Database path
-const DB_PATH = __dirname + '/db.json';
-
-
 /**
  * Database service
  */
@@ -14,12 +10,13 @@ class DB {
 
     /**
      * Initialise
+     * @param cmd Application commands
      * @param models Models to populate the default schema
      */
-    init(models) {
+    init(cmd, models) {
 
         // Initialise database
-        this.db = low(new FileSync(DB_PATH));
+        this.db = low(new FileSync(cmd.database));
 
         // Initialise default schema
         this.db.defaults(

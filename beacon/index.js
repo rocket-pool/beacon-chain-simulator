@@ -10,6 +10,9 @@ const DEFAULT_POW_WEB3_HOST = 'ws://127.0.0.1:8545';
 // Default beacon API websocket port
 const DEFAULT_API_WS_PORT = '9545';
 
+// Default database path
+const DEFAULT_DB_PATH = __dirname + '/db.json';
+
 // Initialisa CLI
 cmd
     .option('-h, --powHost <address>', 'The address of the PoW chain web3 host')
@@ -17,6 +20,7 @@ cmd
     .option('-d, --depositContract <address>', 'The address of the Casper Deposit contract')
     .option('-w, --withdrawalContract <address>', 'The address of the Casper Withdrawal contract')
     .option('-f, --from <address>', 'The address to make Casper Withdrawal transactions from')
+    .option('-b, --database <path>', 'The path to the database storage file')
     .option('-n, --noDatabase', 'Do not use a database for persistent beacon chain state')
     .parse(process.argv);
 
@@ -34,6 +38,7 @@ function start() {
         if (!cmd.withdrawalContract.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid withdrawal contract address.');
         if (!cmd.from) throw new Error('From address required (-f, --from <address>).');
         if (!cmd.from.match(/^(0x)?[0-9a-f]{40}$/i)) throw new Error('Invalid from address.');
+        if (!cmd.database) cmd.database = DEFAULT_DB_PATH;
         cmd.noDatabase = !!cmd.noDatabase;
 
         // Create services
@@ -43,7 +48,7 @@ function start() {
         let beaconAPI = new BeaconAPI();
 
         // Initialise services
-        if (!cmd.noDatabase) db.init([beaconChain, powChain]);
+        if (!cmd.noDatabase) db.init(cmd, [beaconChain, powChain]);
         beaconChain.init(cmd, (cmd.noDatabase ? null : db.db), powChain);
         powChain.init(cmd, (cmd.noDatabase ? null : db.db), beaconChain);
         beaconAPI.init(cmd, beaconChain);
