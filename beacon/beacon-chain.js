@@ -10,7 +10,7 @@ const GENESIS_SLOT = 0;
 const FAR_FUTURE_SLOT = Math.pow(2, 64) - 1;
 
 // Time parameters
-const SLOT_DURATION = 1000; // ms
+const SLOT_DURATION = 3000; // ms
 const EPOCH_LENGTH = 5; // Slots
 const ENTRY_EXIT_DELAY = 10; // Slots
 const VALIDATOR_WITHDRAWAL_TIME = 10; // Slots
