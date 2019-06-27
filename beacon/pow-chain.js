@@ -4,6 +4,10 @@ const ssz = require('@chainsafesystems/ssz');
 const Web3 = require('web3');
 
 
+// Config
+const CHECK_CONNECTION_INTERVAL = 10000;
+
+
 // Get contract data
 const depositContractABI = JSON.parse(fs.readFileSync(__dirname + '/../contracts/casper/Deposit.abi'));
 const withdrawalContractABI = JSON.parse(fs.readFileSync(__dirname + '/../contracts/compiled/Withdraw.abi'));
@@ -25,23 +29,16 @@ class PowChain extends EventEmitter {
 
         // Initialise params
         this.db = db;
+        this.powHost = cmd.powHost;
+        this.depositContractAddress = cmd.depositContract;
+        this.withdrawalContractAddress = cmd.withdrawalContract;
+        this.fromAddress = cmd.from;
 
-        // Initialise web3
-        this.web3 = new Web3(cmd.powHost);
-
-        // Initialise contracts
-        this.depositContract = new this.web3.eth.Contract(depositContractABI, cmd.depositContract);
-        this.withdrawalContract = new this.web3.eth.Contract(withdrawalContractABI, cmd.withdrawalContract, {from: cmd.from, gas: 8000000});
-
-        // Process existing deposit contract deposit events
-        this.depositContract.getPastEvents('Deposit', {fromBlock: 0}).then((events) => {
-            events.forEach(event => { this.processDepositEvent(event); });
-        });
-
-        // Subscribe to new deposit contract deposit events
-        this.depositContract.events.Deposit().on('data', (event) => {
-            this.processDepositEvent(event);
-        });
+        // Check PoW chain connection on interval
+        this.checkConnectionTimer = setInterval(() => {
+            this.checkConnection();
+        }, CHECK_CONNECTION_INTERVAL);
+        this.checkConnection();
 
         // Process beacon chain withdrawal events
         beaconChain.on('validator.status', (status, validator, balance) => {
@@ -58,6 +55,85 @@ class PowChain extends EventEmitter {
         return {
             processedDepositEvents: [],
         };
+    }
+
+
+    /**
+     * Check PoW chain connection
+     */
+    checkConnection() {
+
+        // Initialise web3
+        if (!this.web3) this.web3 = new Web3(this.powHost);
+
+        // Get network ID
+        this.web3.eth.net.getId().then(id => {
+
+            // Initialise connection
+            if (!this.connected) {
+                this.connected = true;
+                this.initConnection();
+            }
+
+        }).catch(e => {
+
+            // Close connection
+            if (this.connected) {
+                this.connected = false;
+                this.closeConnection();
+            }
+
+            // Unset web3
+            this.web3 = null;
+
+            // Log
+            console.log('Lost connection to PoW provider, retrying in %ds...', CHECK_CONNECTION_INTERVAL / 1000);
+
+        });
+
+    }
+
+
+    /**
+     * Initialise PoW chain connection
+     */
+    initConnection() {
+
+        // Log
+        console.log('Connected to PoW provider, initialising...');
+
+        // Initialise contracts
+        this.depositContract = new this.web3.eth.Contract(depositContractABI, this.depositContractAddress);
+        this.withdrawalContract = new this.web3.eth.Contract(withdrawalContractABI, this.withdrawalContractAddress, {from: this.fromAddress, gas: 8000000});
+
+        // Process existing deposit contract deposit events
+        this.depositContract.getPastEvents('Deposit', {fromBlock: 0}).then((events) => {
+            events.forEach(event => { this.processDepositEvent(event); });
+        });
+
+        // Subscribe to new deposit contract deposit events
+        this.depositSubscription = this.depositContract.events.Deposit().on('data', (event) => {
+            this.processDepositEvent(event);
+        });
+
+    }
+
+
+    /**
+     * Close PoW chain connection
+     */
+    closeConnection() {
+
+        // Log
+        console.log('Lost connection to PoW provider, closing...');
+
+        // Unsubscribe from contract events
+        this.depositSubscription.unsubscribe();
+
+        // Unset contracts
+        this.depositContract = null;
+        this.withdrawalContract = null;
+
     }
 
 
@@ -94,6 +170,9 @@ class PowChain extends EventEmitter {
      * @param amount The amount withdrawn
      */
     async processWithdrawalEvent(validator, amount) {
+
+        // Check connection
+        if (!this.connected) return;
 
         // Send main chain withdrawal transaction
         let result = await this.withdrawalContract.methods.withdraw(validator.withdrawalAddress, this.web3.utils.toWei(''+amount, 'gwei')).send();
