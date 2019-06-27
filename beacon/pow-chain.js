@@ -87,7 +87,7 @@ class PowChain extends EventEmitter {
             this.web3 = null;
 
             // Log
-            console.log('Lost connection to PoW provider, retrying in %ds...', CHECK_CONNECTION_INTERVAL / 1000);
+            console.log('Lost connection to PoW provider at %s, retrying in %ds...', this.powHost, CHECK_CONNECTION_INTERVAL / 1000);
 
         });
 
