@@ -6,6 +6,7 @@ const Web3 = require('web3');
 
 // Config
 const CHECK_CONNECTION_INTERVAL = 10000;
+const CHECK_DEPOSIT_EVENTS_INTERVAL = 10000;
 
 
 // Get contract data
@@ -33,6 +34,9 @@ class PowChain extends EventEmitter {
         this.depositContractAddress = cmd.depositContract;
         this.withdrawalContractAddress = cmd.withdrawalContract;
         this.fromAddress = cmd.from;
+
+        // Processed deposit events
+        this.processedDepositEvents = {};
 
         // Check PoW chain connection on interval
         this.checkConnectionTimer = setInterval(() => {
@@ -106,15 +110,11 @@ class PowChain extends EventEmitter {
         this.depositContract = new this.web3.eth.Contract(depositContractABI, this.depositContractAddress);
         this.withdrawalContract = new this.web3.eth.Contract(withdrawalContractABI, this.withdrawalContractAddress, {from: this.fromAddress, gas: 8000000});
 
-        // Process existing deposit contract deposit events
-        this.depositContract.getPastEvents('Deposit', {fromBlock: 0}).then((events) => {
-            events.forEach(event => { this.processDepositEvent(event); });
-        });
-
-        // Subscribe to new deposit contract deposit events
-        this.depositSubscription = this.depositContract.events.Deposit().on('data', (event) => {
-            this.processDepositEvent(event);
-        });
+        // Check deposit events on interval
+        this.checkDepositEventsTimer = setInterval(() => {
+            this.checkDepositEvents();
+        }, CHECK_DEPOSIT_EVENTS_INTERVAL);
+        this.checkDepositEvents();
 
     }
 
@@ -127,12 +127,30 @@ class PowChain extends EventEmitter {
         // Log
         console.log('Lost connection to PoW provider, closing...');
 
-        // Unsubscribe from contract events
-        this.depositSubscription.unsubscribe();
+        // Stop checking deposit events
+        clearInterval(this.checkDepositEventsTimer);
 
         // Unset contracts
         this.depositContract = null;
         this.withdrawalContract = null;
+
+    }
+
+
+    /**
+     * Check main chain deposit events
+     */
+    checkDepositEvents() {
+
+        // Process existing deposit contract deposit events
+        this.depositContract.getPastEvents('Deposit', {fromBlock: 0}).then((events) => {
+            events.forEach(event => {
+                if (!this.processedDepositEvents[event.id]) {
+                    this.processedDepositEvents[event.id] = true;
+                    this.processDepositEvent(event);
+                }
+            });
+        });
 
     }
 
