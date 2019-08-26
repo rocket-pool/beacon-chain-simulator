@@ -143,7 +143,7 @@ class PowChain extends EventEmitter {
     checkDepositEvents() {
 
         // Process existing deposit contract deposit events
-        this.depositContract.getPastEvents('Deposit', {fromBlock: 0}).then((events) => {
+        this.depositContract.getPastEvents('DepositEvent', {fromBlock: 0}).then((events) => {
             events.forEach(event => {
                 if (!this.processedDepositEvents[event.id]) {
                     this.processedDepositEvents[event.id] = true;
