@@ -44,10 +44,12 @@ class PowChain extends EventEmitter {
         }, CHECK_CONNECTION_INTERVAL);
         this.checkConnection();
 
+        /*
         // Process beacon chain withdrawal events
         beaconChain.on('validator.status', (status, validator, balance) => {
             if (status.code == 'withdrawn') this.processWithdrawalEvent(validator, balance);
         });
+        */
 
     }
 
